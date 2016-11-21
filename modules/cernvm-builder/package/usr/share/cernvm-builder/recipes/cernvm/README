@@ -1,0 +1,43 @@
+CONTENTS
+
+    1. SCRIPTS
+       What kind of scripts are executed during the build process
+       
+    2. FILES
+       What files are copied during the build process
+       
+1. SCRIPTS
+--------------
+
+This folder contains the steering files that will be copied
+inside the VM and will launch the building process. The user
+can overwrite one or all of them...
+
+Scripts description in the order they run:
+
+    pre-init            : (Overriden by user)
+    init                : Runned right when VM is booted
+                          This script mounts the appropriate partition, setups the appropriate filesystems
+                          and initializes the build process.
+    post-init           : (Overriden by used)
+    
+    pre-build           : (Overriden by user)
+    build               : Called when init finishes successfully, it starts the conary job, does some post-build
+                          configuration and setups bootloader.
+    post-build          : (Overriden by user)
+
+    pre-chroot          : (Overriden by user)
+    chroot              : Scripts that dould be run inside the chroot environment
+    post-chroot         : (Overriden by user)
+
+    pre-finalize        : (Overriden by user)
+    finalize            : Called when build finishes. It collects the stdout files, unmounts, cleanups and 
+                          shuts down the machine.
+
+For every script, all the command-line arguments passed to start.sh are still
+available as CMD_<parameter> global variables...
+
+2. FILES
+--------------
+
+The directory ./files contains all the files that sould be copied to the destination chroote'd filesyste.

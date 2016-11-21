@@ -1,0 +1,38 @@
+
+# Enable the LDAP module
+LoadModule "iAgent::Module::LDAPAuth"
+
+# LDAP Authentication
+LDAPServer       "<% The LDAP server to connect to %>"
+LDAPBindDN       "<% The user DN to use for binding with the server %>"
+LDAPBindPassword "<% The user's password %>"
+LDAPSearchBase   "<% The base DN under wich to search for users: OU=people,DC=organization,DC=org %>"
+LDAPNameAttrib   "<% The attribute that holds the user name: cn %>"
+
+##
+## Uncomment the following lines if you want to have and
+## administration override on a specified group
+##
+#<LDAPOverride "admin">
+#   LDAPGroup 	 "CN=cernvm-infrastructure,OU=e-groups,OU=Workgroups,DC=cern,DC=ch"
+#</LDAPOverride>
+
+##
+## LDAP Groups-to-permissions mapping
+##
+## <Permission [role]>
+##    LDAPGroup     "[Full DN of the group]"
+##    Description " [A human-reeadable description of this role]"
+##
+##    # Set to 1 if you want this permission to be present if the user was not found
+##    # in the database
+##    Default       [1,0]
+##
+## </Permission>
+##
+<Permission read>
+    LDAPGroup    "<% The full DN of the group that allows read access: CN=read,OU=groups,DC=organization,DC=org %>"
+    Default      1
+    Description  "User can read stuff"
+</Permission>
+

@@ -1,0 +1,96 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of iAgent::Module::LDAPAuth</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../../resources/shCore.js"></script>
+<script type="text/javascript" src="../../resources/shBrushPerl.js"></script>
+<link href="../../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#intercepted_events">INTERCEPTED EVENTS</a></li>
+	<ul>
+
+		<li><a href="#comm_action">comm_action</a></li>
+	</ul>
+
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>iAgent::Module::LDAPAuth - LDAP Authentication and Authorization for iAgent</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides LDAP Authentication and Authorization for iAgent.</p>
+<p>It scans comm_action, comm_available, comm_unavailable dispatches, it validates the source
+and it prohibits the propagation if they are invalid.</p>
+<p>
+</p>
+
+<h1><a name="intercepted_events">INTERCEPTED EVENTS</a></h1>
+<p>This module intrecepts the following messages</p>
+<p>
+</p>
+<h2><a name="comm_action">comm_action</a></h2>
+<p>
+</p>
+
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>This module is looking for the configuration file 'ldap.conf' that should contain
+the following entries:</p>
+<pre class="brush: perl">
+  # LDAP Authentication
+  LDAPServer       &quot;mydc.company.com&quot;
+  LDAPBindDN       &quot;cn=user,DC=mycompany,DC=com&quot;
+  LDAPBindPassword &quot;v3ry$3cr3t&quot;
+  
+  # Specify how we should find the user
+  LDAPSearchBase   &quot;OU=People,DC=mycompany,DC=com&quot;
+  LDAPNameAttrib   &quot;cn&quot;
+  
+  # LDAP Groups-to-permissions mapping
+  &lt;Permission admin&gt;
+      LDAPGroup    &quot;CN=admins,OU=Groups,DC=mycompany,DC=com&quot;
+      
+      # If default=1, and the user was not found on the database,
+      # The permission will be granted. If the user was found, but
+      # the group was missing, the pemission will be revoked.
+      Default      0
+  &lt;/Permission&gt;
+
+</pre>
+<p>
+</p>
+
+<h1><a name="author">AUTHOR</a></h1>
+<p>Developed by Ioannis Charalampidis &lt;<a href="mailto:ioannis.charalampidis@cern.ch">ioannis.charalampidis@cern.ch</a>&gt; 2011-2012 at PH/SFT, CERN</p>
+
+</body>
+
+</html>

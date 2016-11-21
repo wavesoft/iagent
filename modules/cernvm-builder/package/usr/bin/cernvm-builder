@@ -1,0 +1,205 @@
+#!/bin/bash
+#
+# Builder scripts from inside the guest 
+#
+
+# Validate config file
+if [ ! -f /etc/cernvm-builder/config.sh ]; then
+  echo "ERROR: Configuration file missing!"
+  exit 1  
+fi
+
+# Define some required parameters for the build scripts
+CMD_bid="?"
+DESC_bid="A unique ID of the new build to address the logs and output folders"
+CMD_logdir=""
+DESC_logdir="Override the default log directory"
+
+# Source the basic configuration
+. /etc/cernvm-builder/config.sh
+
+# Reminding the importing stuff from config.sh
+#DIR_FAKEROOT=
+#DIR_RECIPES=
+#DIR_SCRIPTS=
+#DIR_LOGS=
+#DIR_FAKEROOT_RECIPE=
+#DIR_FAKEROOT_LOGS=
+
+# Include the core scripts
+. "$DIR_SCRIPTS/functions.sh"
+. "$DIR_SCRIPTS/imageutil.sh"
+
+# (All of the used functions are in functions.sh - Look there if you see something new)
+
+# We are ready! Banner!
+echo "HΦAIΣTOΣ builder v0.2 - Hephaestus Image Building Tool"
+
+# Validate command-line input
+if [ -z "$1" ]; then
+    echo "ERROR: Please specify a command"
+    echo "USE: $0 build <recipe> <parameters>"
+    echo "     $0 recipes"
+    echo "     $0 help [ <recipe> ]"
+    exit 1
+else
+    if [ "$1" == "help"  ]; then
+        if [ -z "$2" ]; then
+            usage
+        else
+            recipe_help $2
+        fi
+        exit 0
+    elif [ "$1" == "recipes"  ]; then
+        recipes
+        exit 0
+    elif [ "$1" != "build" ]; then
+        echo "ERROR: Unknown command '$1'"
+        usage
+        exit 1
+    fi
+fi
+
+#
+# Command line is at this point:
+#
+#  $0 build <recipe> [-parameter <value> [-parameter <value> ...] ]
+#
+
+# Get recipe
+if [ -z "$2" ]; then
+    echo "ERROR: Missing recipe name!"
+    echo "USE: $0 build <recipe> <parameters>"
+    exit 1
+else
+    BUILD_RECIPE=$2
+    shift
+    shift
+fi
+
+# Prepare some aliases
+DIR_RECIPE="$DIR_RECIPES/$BUILD_RECIPE"
+if [ ! -d "$DIR_RECIPE" ]; then
+    echo "ERROR: The requested recipe ($BUILD_RECIPE) was not found on the recipes folder ($DIR_RECIPES)!"
+    exit 1
+fi
+
+# Include recipe configuration
+[ ! -f "$DIR_RECIPE/vars.sh" ] && echo "ERROR: Recipe $BUILD_RECIPE has no variable definitions!" && exit 1
+. "$DIR_RECIPE/vars.sh"
+
+#####################################
+# Process command line
+#####################################
+CMDLINE="$*"
+until [ -z "$1" ]; do
+    PARM=$1
+    VALUE=$2
+    #if [ -z "$VALUE" ]; then
+    #    echo "Error: Parameter $PARM expects a value!" 1>&2
+    #    exit 1
+    #fi
+    if [ $(echo $PARM | grep -c "^-[^-]") == 0 ]; then
+        echo "Error: Parameter $PARM expeted to be in '-name' format!" 1>&2
+        exit 1
+    fi
+    PARM=$(echo -n $PARM | sed -r "s/^-//" | sed s/-/_/g)
+    VPARM="CMD_$PARM"
+    # If the parameter is not defined, it will be defined now
+    eval "$VPARM=\$VALUE"
+    shift
+    shift
+done
+
+#####################################
+# Process missing options
+#####################################
+VARS=$(set | grep ^CMD_ | sed -r "s/CMD_([^=]+)=.*/\\1/")
+OK=1
+for VAR in $VARS; do
+    VNAME="CMD_$VAR"
+    if [ "${!VNAME}" == "?" ]; then
+        VAR=$(echo $VAR | sed s/_/-/g)
+        echo "ERROR: You need to specify parameter '$VAR'!" 1>&2
+        OK=0
+    fi
+done
+if [ $OK -ne 1 ]; then
+    echo "ERROR: Missing parameters. Will not continue..." 1>&2
+    exit 1
+fi
+
+# Prepare variables
+export BUILD_ID="${CMD_bid}"
+export DIR_SCRIPTS="${DIR_RECIPE_SCRIPTS}"
+export DIR_LOG="${DIR_LOGS}/${BUILD_ID}"
+export DIR_TMP="${DIR_TMP}/${BUILD_ID}"
+export DIR_FAKEROOT="${DIR_FAKEROOT}/${BUILD_ID}"
+
+# Override variables defined by the command line
+[ ! -z "$CMD_logdir" ] && DIR_LOG="$CMD_logdir"
+
+# Create missing directories
+[ ! -d "$DIR_LOG" ] && mkdir -p "$DIR_LOG"
+[ ! -d "$DIR_TMP" ] && mkdir -p "$DIR_TMP"
+[ ! -d "$DIR_FAKEROOT" ] && mkdir -p "$DIR_FAKEROOT"
+
+# Enter recipe folder
+cd "$DIR_RECIPE"
+
+# Create logfiles
+echo "+++ Build started at $(date)" > "$DIR_LOG/build.log"
+echo "+++ Build started at $(date)" > "$DIR_LOG/errors.log"
+
+# Setup exit handler
+trap cleanexit EXIT
+
+# 1) Init scripts are allowed to alter the environment
+[ -f "./pre-init.sh" ] && reval ". ./pre-init.sh"
+[ -f "./init.sh" ] && reval ". ./init.sh"
+[ -f "./post-init.sh" ] && reval ". ./post-init.sh"
+
+# Generate config file by exporting command parameters and defaults
+set | grep ^CMD_ | sed -r "s/(.*)/export \1/" > "config.sh"
+set | grep ^DEF_ | sed -r "s/(.*)/export \1/" >> "config.sh"
+set | grep ^DIR_ | sed -r "s/(.*)/export \1/" >> "config.sh"
+
+# 2) Build scripts form the basic image
+runscript ./pre-build.sh
+runscript ./build.sh
+runscript ./post-build.sh
+
+# Prepare chroot stuff
+r mkdir -p "${DIR_FAKEROOT}${DIR_FAKEROOT_RECIPE}"
+r mkdir -p "$DIR_FAKEROOT/${DIR_FAKEROOT_LOGS}"
+r mount --bind /dev "${DIR_FAKEROOT}/dev"
+r mount --bind "$DIR_RECIPE" "${DIR_FAKEROOT}${DIR_FAKEROOT_RECIPE}"
+r mount --bind "$DIR_LOG" "${DIR_FAKEROOT}${DIR_FAKEROOT_LOGS}"
+
+# 3) Chroot scripts alter stuff from inside
+runchroot ./pre-chroot.sh
+runchroot ./chroot.sh
+runchroot ./post-chroot.sh
+
+# Unmount fakeroot data
+r sync
+r umount "${DIR_FAKEROOT}/dev"
+r umount "${DIR_FAKEROOT}${DIR_FAKEROOT_RECIPE}"
+r umount "${DIR_FAKEROOT}${DIR_FAKEROOT_LOGS}"
+
+# 4) Finalize packs the resulted image
+runscript ./pre-finalize.sh
+runscript ./finalize.sh
+runscript ./post-finalize.sh
+
+# Clean mounts
+cleanmounts "${DIR_FAKEROOT}"
+
+# Write when we are finished
+echo "Completed at $(date)" >> "$DIR_LOG/build.log"
+
+# Dump stderr
+cat "$DIR_LOG/errors.log"
+
+# Return 0
+cleanexit 0

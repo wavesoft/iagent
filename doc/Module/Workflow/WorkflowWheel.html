@@ -1,0 +1,191 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of Module::Workflow::WorkflowWheel</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../../resources/shCore.js"></script>
+<script type="text/javascript" src="../../resources/shBrushPerl.js"></script>
+<link href="../../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#states">STATES</a></li>
+	<li><a href="#public_methods">PUBLIC METHODS</a></li>
+	<ul>
+
+		<li><a href="#new___arguments__">new [ ARGUMENTS ]</a></li>
+		<li><a href="#start">start</a></li>
+		<li><a href="#abort">abort</a></li>
+		<li><a href="#completed_action_uuid__context__return_code">completed ACTION_UUID, CONTEXT, RETURN_CODE</a></li>
+		<li><a href="#failed_action_uuid__reason">failed ACTION_UUID, REASON</a></li>
+		<li><a href="#keepalive_action_uuid">keepalive ACTION_UUID</a></li>
+	</ul>
+
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Module::Workflow::WorkflowWheel - Workflow POE Wheel helper for the Workflow implementation</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This Wheel is helping the design of the Workflow. Each Wheel is capable of implementing the invoking-side of
+the workflow.</p>
+<p>
+</p>
+
+<h1><a name="usage">USAGE</a></h1>
+<p>Here is a quick guide to get started with the workflow wheel:</p>
+<p>Firstly, initialize a workflow wheel:</p>
+<pre class="brush: perl">
+ $_[HEAP]-&gt;{WF} = new Module::Workflow::WorkflowWheel(
+        Workflow =&gt; new Module::Workflow::WorkflowGraph( %definition ),
+        CompleteHandler =&gt; &quot;wf_completed&quot;,
+        ActionInvokeHandler =&gt; &quot;wf_action&quot;
+ )</pre>
+<p>And start the workflow:</p>
+<pre class="brush: perl">
+ $_[HEAP]-&gt;{WF}-&gt;start();</pre>
+<p>When an action needs to be executed the wheel will trigger the <code>ActionInvokeHandler</code>:</p>
+<pre class="brush: perl">
+ sub __wf_action {
+        my ($self, $uuid, $action, $context, $custom) = @_[ OBJECT, ARG0..3 ];
+        .. invoke the action..
+ }</pre>
+<p>When the action is completed you must call the 'completed' method</p>
+<pre class="brush: perl">
+ sub __my_action_feedback {
+        my $uuid = ... get the UUID of the invoked action ...
+        $_[HEAP]-&gt;{WF}-&gt;completed($uuid, $new_context, $action_result);
+ }</pre>
+<p>Also, every time you have some feedback for the progress of the action you must call the 'keepalive' method</p>
+<pre class="brush: perl">
+ sub __my_action_said_blah {
+        my $uuid = ... get the UUID of the invoked action ...
+        $_[HEAP]-&gt;{WF}-&gt;keepalive($uuid);
+ }</pre>
+<p>If the workflow is completed it will trigger the <code>CompleteHandler</code></p>
+<p>
+</p>
+
+<h1><a name="states">STATES</a></h1>
+<p>Each workflow and each action are finite-state-machines that pass through the following states:</p>
+<p>Workflow:</p>
+<pre class="brush: perl">
+                   +------------- &lt;- -------------------+
+                   |                                    |
+ [ PENDING ] -&gt; CALCULATING -&gt; INVOKING -&gt; ACTIVE -&gt; ---+
+                  | |
+                  | +----- -&gt; FAILED ------
+                  |                        \
+                  +------ -&gt; COMPLETED  ----+-- -&gt; [ DEAD ] 
+                                            /
+               (User abort) ~&gt; ABORTED ----+
+                                          /
+           (Timeout timer) ~&gt; TIMEOUT ----</pre>
+<p>Action:</p>
+<pre class="brush: perl">
+ [ PENDING ] -&gt; ACTIVE -&gt; ABORTED -&gt; ---
+                  |                     \
+                  v                      \
+                  +-----------------------+--- -&gt; [ DEAD ]</pre>
+<p>The transitions are performed through the main loop or through direct commands of the user or the timeout timers.</p>
+<p>
+</p>
+
+<h1><a name="public_methods">PUBLIC METHODS</a></h1>
+<p>
+</p>
+<h2><a name="new___arguments__">new [ ARGUMENTS ]</a></h2>
+<p>Constructs a new workflow handler
+Parameters that can/must be supplied:</p>
+<pre class="brush: perl">
+   Workflow =&gt;                  (Required) The workflow definition object
+ 
+   ActionInvokeHandler =&gt;       A message to dispatch when the workflow wants an action to be executed:
+                                                                ARG0 : [out] The UUID of the workflow
+                                                                ARG1 : [out] The UUID of the action
+                                                                ARG2 : [out] The action name
+                                                                ARG3 : [out] The action type
+                                                                ARG4 : [out] The context of the workflow
+                                                                ARG5 : [in/out] User-defined data for this action
+ 
+   ActionAbortHandler =&gt;        A message to dispatch when the workflow wants an action to be aborted
+                                                                ARG0 : [out] The UUID of the workflow
+                                                                ARG1 : [out] The UUID of the action
+                                                                ARG2 : [out] The action name
+                                                                ARG3 : [out] The context of the workflow
+                                                                ARG4 : [out] The reason it was aborted
+                                                                ARG5 : [in/out] User-defined data for this action
+ 
+   ActionTimeoutHandler =&gt;      An acction was timed out due to inactivity. This handler is called before the ActionAbortHandler
+                                                                ARG0 : [out] The UUID of the workflow
+                                                                ARG1 : [out] The UUID of the action
+                                                                ARG2 : [out] The action name
+                                                                ARG3 : [out] The context of the workflow
+                                                                ARG4 : [in/out] User-defined data for this action
+ 
+   CompletedHandler =&gt;          A message to dispatch when the workflow is completed
+                                                                ARG0 : [out] The UUID of the workflow
+                                                                ARG1 : [out] The workflow definition graph
+                                                                ARG2 : [out] The last return code
+ 
+   FailedHandler =&gt;             A message to dispatch when the workflow is failed because of another reason
+                                                                ARG0 : [out] The UUID of the workflow
+                                                                ARG1 : [out] The workflow definition graph
+                                                                ARG2 : [out] The suggested return code
+                                                                ARG3 : [out] The error description</pre>
+<p>
+</p>
+<h2><a name="start">start</a></h2>
+<p>(Re-)Start the workflow. If called while a workflow execution is already in progress it will cause the previous one
+to abort.</p>
+<p>
+</p>
+<h2><a name="abort">abort</a></h2>
+<p>Abort the workflow. After this call the workflow wheel will dispatch a termination signal to all of the active actions
+but it will not wait for them to complete; it will consider the current state lost and exit.</p>
+<p>
+</p>
+<h2><a name="completed_action_uuid__context__return_code">completed ACTION_UUID, CONTEXT, RETURN_CODE</a></h2>
+<p>This method is called as a response to the <code>ActionInvokeHandler</code>, when the action that was invoked is completed (or
+failed - this is determined by the return code).</p>
+<p>The caller MUST supply the same ACTION_UUID as it was received from the ActionInvokeHandler.</p>
+<p>If all the pending actions are completed the workflow will automatically continue to the next step.</p>
+<p>
+</p>
+<h2><a name="failed_action_uuid__reason">failed ACTION_UUID, REASON</a></h2>
+<p>This method should be called if the requested (by <code>ActionInvokeHandler</code>) action was unable to be invoked. A human-readable
+reason must be specified in order to properly log the event.</p>
+<p>
+</p>
+<h2><a name="keepalive_action_uuid">keepalive ACTION_UUID</a></h2>
+<p>This method should be called when there was a feedback of any sort from the invoked action. This will reset the keep-alive
+timer that will fire if there was no feedback from the remote endpoint after a long period of time.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,161 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of Module::Workflow::WorkflowGraph</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../../resources/shCore.js"></script>
+<script type="text/javascript" src="../../resources/shBrushPerl.js"></script>
+<link href="../../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#sample_workflow">SAMPLE WORKFLOW</a></li>
+	</ul>
+
+	<li><a href="#parameter_macros">PARAMETER MACROS</a></li>
+	<li><a href="#multiple_action_instances">MULTIPLE ACTION INSTANCES</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Module::Workflow::WorkflowGraph - Workflow Representation Graph</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This class provides the storage for the entire workflow definition. It holds
+all the possible actions, their state redirections and context transformations.</p>
+<p>It also holds the current context and active action.</p>
+<p>
+</p>
+<h2><a name="sample_workflow">SAMPLE WORKFLOW</a></h2>
+<p>Here is a sample workflow definition</p>
+<pre class="brush: perl">
+ $workflowGraph-&gt;define( 
+    
+     # Define the actions and their nesting redirects
+     ACTIONS =&gt; {
+     
+        1 =&gt; {
+            action =&gt; 'iagent:build',
+            parameters =&gt; {
+                name =&gt; 'vm_{$id}_{date|%y-%m-%d}_',
+                file =&gt; '{$dir_shared}/{$name}'
+            },
+            route =&gt; {
+                R0 =&gt; 3,        # On result=0
+                                D =&gt; 2,         # Default,
+                                F =&gt; 2          # On failure to invoke
+            },
+                        instances =&gt; {
+                                target =&gt; &quot;@targets&quot;    # Loop over the 'targets' array, found in the context
+                        }
+        },
+     
+        2 =&gt; {
+            action =&gt; 'iagent:log',
+            parameters =&gt; {
+                prefix =&gt; &quot;Error: &quot;
+            }
+        },
+     
+        3 =&gt; {
+            action =&gt; 'iagent:test',
+            parameters =&gt; {
+                suite =&gt; &quot;test_conary_project&quot;,
+                file =&gt; '{$dir_shared}/{$name}{$builder_file}'
+            },
+            route =&gt; {
+                R0 =&gt; 4,
+                                D =&gt; 2,
+                                F =&gt; 2
+            }
+        },
+        
+        4 =&gt; {
+            action =&gt; 'iagent:release',
+            parameters =&gt; {
+                file =&gt; '{$dir_shared}/{$name}{$builder_file}',
+                target =&gt; 'VM Release {$release}'
+            },
+                        route =&gt; {
+                                D =&gt; 2,
+                                F =&gt; 2
+                        }
+        }
+        
+     },
+     
+     # Start from action #1
+     ACTION =&gt; 1
+    
+ });</pre>
+<p>
+</p>
+
+<h1><a name="parameter_macros">PARAMETER MACROS</a></h1>
+<p>This module provides a simple macro support for the action parameters.
+The following macros are supported:</p>
+<pre class="brush: perl">
+  {$var[|default]}       = A (previously defined) context variable
+                           or a default value to use if it wasn't found
+ 
+  {date[|format]}        = A timestamp. You can specify a custom
+                           format. By default it's &quot;%a %b %e %T %Y&quot;
+ 
+  {uuid[|format]}        = Create a Universally-unique ID in one of the
+                           following formats: str (default), hex, b64
+ 
+  {iif|[1|0],true,false} = Check if the first parameter is 0. If yes, evaluate the false
+                           part as macro. Otherwise, evaluate the true part as macro.</pre>
+<p>
+</p>
+
+<h1><a name="multiple_action_instances">MULTIPLE ACTION INSTANCES</a></h1>
+<p>There might be cases that you need to run more than one actions concurrently. Multiple instances can be defined
+for the same action. They can vary from pre-defined repeat loops to custom iteration over the keys of a hash.</p>
+<p>To define such an action you need to specify the <code>instances</code> parameter in a workflow node. The syntax of this
+hash is the following:</p>
+<pre class="brush: perl">
+ instances =&gt; {
+        context_variable_to_update =&gt; &quot;&lt;loop expression&gt;&quot;
+ }</pre>
+<p>The loop expression is a string that define where and how to fetch the different values for the specifeid variable
+of each instance. It's syntax is one of the following:</p>
+<pre class="brush: perl">
+ instances =&gt; {
+        target_variable =&gt; &quot;@array&quot;,    # Loop over the elements of $context-&gt;{array} and store it to context
+                                                                        # variable 'target_variable' of each instance.
+        target_variable =&gt; &quot;#hash&quot;,             # Loop over the keys of the hash $context-&gt;{hash}.
+        target_variable =&gt; &quot;%hash&quot;,             # Loop over the values of the hash $context-&gt;{hash}.
+        target_variable =&gt; &quot;{$hash}|,&quot;  # Split string $context-&gt;{hash} with delimiter ',' and loop over the array elements
+        target_variable =&gt; &quot;1..10&quot;,             # Loop from 1 to 10
+        target_variable =&gt; &quot;1..{$max}&quot;  # Loop from 1 to the value of variable $max
+ }</pre>
+
+</body>
+
+</html>

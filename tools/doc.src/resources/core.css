@@ -1,0 +1,165 @@
+
+body {
+    font-family: "Helvetica Neue", Arial, Helve;
+    font-size: 0.8em;
+    color: #515151;
+}
+
+body.doc {
+    padding: 8px;
+}
+
+body.toc {
+    font-size: 0.9em;
+}
+
+body.doc ul {
+    padding-left: 20px;
+    list-style: upper-roman;
+    font-weight: bold;
+}
+
+body.doc  ul > li {
+    margin-bottom: 3px;
+}
+
+body.doc ul > ul {
+    list-style: upper-alpha;
+    font-weight: normal;
+}
+
+body.doc ul > ul > ul {
+    list-style: decimal;
+    font-weight: normal;
+}
+
+body.doc ul > ul > ul > ul {
+    list-style: lower-alpha;
+    font-weight: normal;
+}
+
+dl {
+    border: 3px double #ccc;
+    padding: 0.5em;
+}
+
+dt {
+    float: left;
+    clear: left;
+    width: 120px;
+    text-align: right;
+    font-weight: bold;
+    color: green;
+}
+
+dt:after {
+    content: ":";
+}
+
+dd {
+    margin: 0 0 0 130px;
+    padding: 0 0 0.5em 0;
+}
+
+dd > p {
+    display: inline;
+    padding: 0px;
+    margin: 0px;
+}
+
+body.doc > ul {
+    float: right;
+    border: solid 2px #b8b7b7;
+    padding: 7px 7px 7px 35px;
+    margin-left: 8px;
+    margin-bottom: 8px;
+    background-color: #ebe9e9;
+}
+
+body.doc > ul a {
+    text-decoration: none;
+    color: #303030;
+}
+
+p {
+    margin: 0;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+h1 {
+    font: 1.9em "ITC Garamond", Garamond, Georgia, "Times New Roman", Times, serif;
+    color: #36497D;
+    background: url(h2_bg.png) no-repeat -2px 29px;
+    padding-left: 0px;
+    padding-top: 6px;
+    padding-bottom: 8px;
+    margin-top: 0px;
+    margin-bottom: 0;
+}
+
+h2 {
+    font: 1.5em "ITC Garamond", Garamond, Georgia, "Times New Roman", Times, serif;
+    color: #36497D;
+    padding-top: 12px;
+    margin: 0;
+    font-weight: bold;
+    padding-bottom: 4px;
+    padding-left: 0;
+}
+
+body.toc ul {
+    list-style: none;
+    padding-left: 15px;
+}
+
+body.toc li {
+    padding: 0px;
+    margin: 0px;
+}
+
+body.toc > ul {
+    padding-left: 0px;
+}
+
+body.toc li.title a {
+    text-decoration: none;
+    color: #515151;
+}
+
+body.toc > ul > li.title {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-top: 3px;
+    margin-bottom: 8px;
+    border-bottom: dashed 1px #a1a1a1;
+}
+
+body.toc > ul a {
+    text-decoration: none;
+}
+
+body.toc li.sub ul li.title {
+    font-weight: bold;
+}
+
+li > ul {
+    font-weight: normal;
+}
+
+body.toc p.title {
+    font-weight: bold;
+    font-size: 1.7em;
+}
+
+div[name=index] {
+    float: right;
+    border: dashed 1px #36497D;
+    padding: 8px;
+    background: white;
+    margin: 5px;
+}
+
+hr[name=index] {
+    display: none;
+}

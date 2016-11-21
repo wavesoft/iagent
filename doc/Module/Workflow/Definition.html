@@ -1,0 +1,424 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of Module::Workflow::Definition</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../../resources/shCore.js"></script>
+<script type="text/javascript" src="../../resources/shBrushPerl.js"></script>
+<link href="../../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#sample_workflow">SAMPLE WORKFLOW</a></li>
+	</ul>
+
+	<li><a href="#workflow_definition">WORKFLOW DEFINITION</a></li>
+	<ul>
+
+		<li><a href="#actions__required_">ACTIONS (Required)</a></li>
+		<li><a href="#active">ACTIVE</a></li>
+		<li><a href="#name">NAME</a></li>
+		<li><a href="#description">DESCRIPTION</a></li>
+		<li><a href="#context">CONTEXT</a></li>
+		<li><a href="#notify">NOTIFY</a></li>
+		<li><a href="#required">REQUIRED</a></li>
+		<li><a href="#error_mode">ERROR_MODE</a></li>
+	</ul>
+
+	<li><a href="#actions_syntax">ACTIONS SYNTAX</a></li>
+	<ul>
+
+		<li><a href="#action__action_">ACTION (action)</a></li>
+		<li><a href="#visual_description__description_">VISUAL DESCRIPTION (description)</a></li>
+		<li><a href="#action_timeout__timeout_">ACTION TIMEOUT (timeout)</a></li>
+		<li><a href="#routing__route_">ROUTING (route)</a></li>
+		<li><a href="#parallel_instances__fork_">PARALLEL INSTANCES (fork)</a></li>
+		<li><a href="#additional_parameters__parameters_">ADDITIONAL PARAMETERS (parameters)</a></li>
+		<li><a href="#multiple_action_instances__instances_">MULTIPLE ACTION INSTANCES (instances)</a></li>
+	</ul>
+
+	<li><a href="#forks_and_parallel_execution">FORKS AND PARALLEL EXECUTION</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Module::Workflow::Definition - Workflow Representation Graph</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This class provides the storage for the entire workflow definition. It holds
+all the possible actions, their state redirections and context transformations.</p>
+<p>It also holds the current context and active action.</p>
+<p>
+</p>
+<h2><a name="sample_workflow">SAMPLE WORKFLOW</a></h2>
+<p>Here is a sample workflow definition. To get more details on how the workflows are
+defined and work, see the <a href="#workflow_definition">WORKFLOW DEFINITION</a> section below.</p>
+<pre class="brush: perl">
+ $workflowGraph-&gt;define( 
+    
+     # Define the actions and their nesting redirects
+     ACTIONS =&gt; {
+     
+        1 =&gt; {
+            action =&gt; 'iagent:build',
+            parameters =&gt; {
+                name =&gt; 'vm_{$id}_{date|%y-%m-%d}_',
+                file =&gt; '{$dir_shared}/{$name}'
+            },
+            route =&gt; {
+                R0 =&gt; 3,        # On result=0
+                                D =&gt; 2,         # Default,
+                                F =&gt; 2          # On failure to invoke
+            },
+                        instances =&gt; {
+                                target =&gt; &quot;@targets&quot;    # Loop over the 'targets' array, found in the context
+                        }
+        },
+     
+        2 =&gt; {
+            action =&gt; 'iagent:log',
+            parameters =&gt; {
+                prefix =&gt; &quot;Error: &quot;
+            }
+        },
+     
+        3 =&gt; {
+            action =&gt; 'iagent:test',
+            parameters =&gt; {
+                suite =&gt; &quot;test_conary_project&quot;,
+                file =&gt; '{$dir_shared}/{$name}{$builder_file}'
+            },
+            route =&gt; {
+                R0 =&gt; 4,
+                                D =&gt; 2,
+                                F =&gt; 2
+            }
+        },
+        
+        4 =&gt; {
+            action =&gt; 'iagent:release',
+            parameters =&gt; {
+                file =&gt; '{$dir_shared}/{$name}{$builder_file}',
+                target =&gt; 'VM Release {$release}'
+            },
+                        route =&gt; {
+                                D =&gt; 2,
+                                F =&gt; 2
+                        }
+        }
+        
+     },
+     
+     # Start from action #1
+     ACTION =&gt; 1
+    
+ });</pre>
+<p>
+</p>
+
+<h1><a name="workflow_definition">WORKFLOW DEFINITION</a></h1>
+<p>Here are all the fields supported in a workflow definition. See the description that follows for more details:</p>
+<pre class="brush: perl">
+
+ {
+     ACTIONS =&gt; {                   # Action definition
+         ..
+     },
+     ACTIVE =&gt; 1,                   # The initial action ID to start the workflow from
+     NAME =&gt; 'My WF',               # The name of the workflow
+     DESCRIPTION =&gt; '...',          # The description of the workflow
+     CONTEXT =&gt; {                   # The initial contents of the workflow context
+         ...
+     },
+     NOTIFY =&gt; [ 'me@domain.com' ], # The JIDs to notify for everything that happens in the workflow
+     REQUIRED =&gt; [                  # The required variables the user must supply for this workflow
+        'project', 'path'
+     ],
+     ERROR_MODE =&gt; 'endure'         # How to handle errors when multiple instances are invoked
+ }</pre>
+<p>
+</p>
+<h2><a name="actions__required_">ACTIONS (Required)</a></h2>
+<p>The hash of the actions that define the workflow. (See <a href="#actions_syntax">ACTIONS SYNTAX</a> below)</p>
+<p>
+</p>
+<h2><a name="active">ACTIVE</a></h2>
+<p>The initial action ID to start the workflow from (Defaults to 1)</p>
+<p>
+</p>
+<h2><a name="name">NAME</a></h2>
+<p>The name of the workflow. This is used by the command line as the key name of the workflow, so try putting something
+short.</p>
+<p>
+</p>
+<h2><a name="description">DESCRIPTION</a></h2>
+<p>A short description of the workflow.</p>
+<p>
+</p>
+<h2><a name="context">CONTEXT</a></h2>
+<p>The initial value of the context hash.</p>
+<pre class="brush: perl">
+ CONTEXT =&gt; {
+     variable =&gt; 'value',
+     complex_var =&gt; {
+         'a' =&gt; 'hash',
+         ...
+     }
+ }</pre>
+<p>
+</p>
+<h2><a name="notify">NOTIFY</a></h2>
+<p>An array with the JIDs of the entities that should be notified for the progress of the workflow.</p>
+<pre class="brush: perl">
+ NOTIFY =&gt; [ 'workflow_observer@domain.com' ]</pre>
+<p>By default the invoker and the workflow server are placed in this array.</p>
+<p>
+</p>
+<h2><a name="required">REQUIRED</a></h2>
+<p>An array with the names of all the required context variables that the user MUST supply before invoking
+the workflow.</p>
+<p><strong>NOTICE:</strong> It is very important to put in this array all the variables required by all the involved actions. (Or
+at least predefine them in the CONTEXT hash). Otherwise the workflow will fail!</p>
+<p>
+</p>
+<h2><a name="error_mode">ERROR_MODE</a></h2>
+<p>How to handle errors if something goes wrong in the workflow. (This only makes sense in workflows that spawn
+multiple instances or fork).</p>
+<pre class="brush: perl">
+ ERROR_MODE =&gt; 'abort' # or 'endure'</pre>
+<p>In <code>abort</code> modde, if something goes wrong the entire workflow is aborted and all the running instances are
+stopped.</p>
+<p>In <code>endure</code> mode, if something goes wrong, only the particular branch fails and the rest of the workflow continues.
+Eventually the workflow WILL SUCCEED without triggering the workflow failure targets.</p>
+<p>
+</p>
+
+<h1><a name="actions_syntax">ACTIONS SYNTAX</a></h1>
+<p>The 'actions' hash can have the following fields. For each one of those fields, check the description that follows:</p>
+<pre class="brush: perl">
+ ACTION_ID =&gt; {
+     action     =&gt; '',      # The name of the action to invoke
+     description =&gt; '',     # The user-friendly alias of this action
+     parameters =&gt; { },     # Additional parameters to place in the context before invoking that action
+     route      =&gt; { },     # Rounting information for this action
+     instances  =&gt; { },     # Multiple instance information
+     timeout    =&gt; 100      # How long to wait (in secods) for the action to complete
+ }</pre>
+<p>
+</p>
+<h2><a name="action__action_">ACTION (action)</a></h2>
+<p>The name of the action to invoke. This must be the name of the action as defined in the MANIFEST of a workflow-compatible
+module. The appropriate module will be discovered at run-time. There is no need (and no support) to explicitly specify a target.</p>
+<p>
+</p>
+<h2><a name="visual_description__description_">VISUAL DESCRIPTION (description)</a></h2>
+<p>This field specifies a user-friendly alias for the action. If specified this name will be used, in the User Interface instead
+of the action name.</p>
+<p>
+</p>
+<h2><a name="action_timeout__timeout_">ACTION TIMEOUT (timeout)</a></h2>
+<p>Usually it is not needed, but some times you need an explicit timeout for an action. You can specify it through this value.
+If the timeout is reached, the 'TO' target will be selected on routing.</p>
+<p>
+</p>
+<h2><a name="routing__route_">ROUTING (route)</a></h2>
+<p>Actions are connected with eachother through routing information (the 'route' hash). The syntax of the routing hash
+is simple:</p>
+<pre class="brush: perl">
+ {
+     &lt;state&gt; =&gt; &lt;action index&gt;
+ }</pre>
+<p>The possible states are:</p>
+<dl>
+<dt><strong><a name="d" class="item">D</a></strong>
+
+<dd>
+<p>The default target for cases that are not handled.</p>
+</dd>
+</li>
+<dt><strong><a name="r0_r255" class="item">R0 ~ R255</a></strong>
+
+<dd>
+<p>Where to go if the action returned with a value of 0 (R0), 1 (R1) ... till 255(R255)</p>
+</dd>
+</li>
+<dt><strong><a name="f" class="item">F</a></strong>
+
+<dd>
+<p>Where to go if for some reason the action has failed and you don't want to abort the entire workflow.</p>
+</dd>
+</li>
+<dt><strong><a name="tl" class="item">TL</a></strong>
+
+<dd>
+<p>Where to go if we timed out while trying to lookup a handler for the action.</p>
+</dd>
+</li>
+<dt><strong><a name="to2" class="item">TO</a></strong>
+
+<dd>
+<p>Where to go if the action timed out. (The timeout value must be specified by the 'timeout' parameter of the action).</p>
+</dd>
+</li>
+</dl>
+<p>The possible action indices:</p>
+<ol>
+<li>
+<p>Complete the workflow.</p>
+</li>
+<dt><strong><a name="12" class="item">-1</a></strong>
+
+<dd>
+<p>Abort the workflow.</p>
+</dd>
+</li>
+<dt><strong><a name="any_other_number" class="item">Any other number</a></strong>
+
+<dd>
+<p>Jump to that action.</p>
+</dd>
+</li>
+</ol>
+<p>
+</p>
+<h2><a name="parallel_instances__fork_">PARALLEL INSTANCES (fork)</a></h2>
+<p>It is possible to fork the workflow into multiple instances running in parallel. To do so, you just have to define
+a fork array. For details see the next secion <a href="#forks_and_parallel_execution">FORKS AND PARALLEL EXECUTION</a>.</p>
+<p>This field is an array refference of hash references. Each hash must have the following fields:</p>
+<pre class="brush: perl">
+ fork =&gt; [
+    {
+        action =&gt; &lt;number&gt;,         # The ID of the action to fork
+        parameters =&gt; {             # Context parameters to add before execution (Optional)
+            'variable' =&gt; '{$value}',
+            'variable' =&gt; {
+                complex =&gt; '{$value|default}
+            }
+        }
+    }
+    ...
+ ]</pre>
+<p>
+</p>
+<h2><a name="additional_parameters__parameters_">ADDITIONAL PARAMETERS (parameters)</a></h2>
+<p>This hash provides additional parameters to place in the action's context before invoking it.
+Keep in mind that theese parameters will also be available to the other upcoming workflow actions.
+Syntax:</p>
+<pre class="brush: perl">
+ {
+     parameter      =&gt; 'value',
+     parameter      =&gt; { hash },
+     parameter      =&gt; [ array ],
+     parameter      =&gt; '{$macro}'
+ }</pre>
+<p>There is also support for simple macros (Available only on string) parameters.
+The following macros are supported:</p>
+<pre class="brush: perl">
+  {$var[|default]}       = A (previously defined) context variable
+                           or a default value to use if it wasn't found
+ 
+  {date[|format]}        = A timestamp. You can specify a custom
+                           format. By default it's &quot;%a %b %e %T %Y&quot;
+ 
+  {uuid[|format]}        = Create a Universally-unique ID in one of the
+                           following formats: str (default), hex, b64
+ 
+  {iif|[1|0],true,false} = Check if the first parameter is 0. If yes, evaluate the false
+                           part as macro. Otherwise, evaluate the true part as macro.</pre>
+<p>
+</p>
+<h2><a name="multiple_action_instances__instances_">MULTIPLE ACTION INSTANCES (instances)</a></h2>
+<p>There might be cases that you need to run more than one actions concurrently. Multiple instances can be defined
+for the same action. They can vary from pre-defined repeat loops to custom iteration over the keys of a hash.</p>
+<p>To define such an action you need to specify the <code>instances</code> parameter in a workflow node. The syntax of this
+hash is the following:</p>
+<pre class="brush: perl">
+ instances =&gt; {
+        context_variable_to_update =&gt; &quot;&lt;loop expression&gt;&quot;
+ }</pre>
+<p>The loop expression is a string that define where and how to fetch the different values for the specifeid variable
+of each instance. It's syntax is one of the following:</p>
+<pre class="brush: perl">
+ instances =&gt; {
+        target_variable =&gt; &quot;@array&quot;,    # Loop over the elements of $context-&gt;{array} and store it to context
+                                    # variable 'target_variable' of each instance.
+        target_variable =&gt; &quot;#hash&quot;,     # Loop over the keys of the hash $context-&gt;{hash}.
+        target_variable =&gt; &quot;%hash&quot;,     # Loop over the values of the hash $context-&gt;{hash}.
+        target_variable =&gt; &quot;{$hash}|,&quot;  # Split string $context-&gt;{hash} with delimiter ',' and loop over the array elements
+        target_variable =&gt; &quot;1..10&quot;,     # Loop from 1 to 10
+        target_variable =&gt; &quot;1..{$max}&quot;  # Loop from 1 to the value of variable $max
+ }</pre>
+<p>
+</p>
+
+<h1><a name="forks_and_parallel_execution">FORKS AND PARALLEL EXECUTION</a></h1>
+<p>There is a special kind of action node, called 'fork' node, that is capable of forking multiple childs that wiill run
+concurrently. Every time a fork happens, a new workflow context is created, thus children will not share context updates
+but they will rather continue their own path.</p>
+<p>To define a fork node, define an action using the following format:</p>
+<pre class="brush: perl">
+ {
+      ACTIONS =&gt; {
+          ...
+          
+          '&lt;number&gt;' =&gt; {
+              description =&gt; 'Fork description',    # The user-friendly alias of the node
+              fork =&gt; [                             # The actions to run in parallel
+                
+                  {
+                      action =&gt; &lt;number&gt;,
+                      parameterss =&gt; {
+                          &lt;context&gt;
+                      }
+                  },
+                  
+                  ...
+                  
+              ],
+              route =&gt; {                            # The routing to be performed when all the forked instances complete
+                  D =&gt; &lt;next action id&gt;,
+                  R1 =&gt; &lt;failure action id&gt;,
+                  ...
+              }              
+          }
+      }
+ }
+
+</pre>
+<p>The forking works by duplicating the workflow definition, updating the context with the specified parameters and setting
+the active action to the defined action. Then the same code that handles <a href="#multiple_action_instances__instances_">MULTIPLE ACTION INSTANCES (instances)</a> takes control.</p>
+<p>
+</p>
+
+<h1><a name="author">AUTHOR</a></h1>
+<p>Developed by Ioannis Charalampidis &lt;<a href="mailto:ioannis.charalampidis@cern.ch">ioannis.charalampidis@cern.ch</a>&gt; 2011-2012 at PH/SFT, CERN</p>
+
+</body>
+
+</html>

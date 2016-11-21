@@ -1,0 +1,130 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of iAgent::Log</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../resources/shCore.js"></script>
+<script type="text/javascript" src="../resources/shBrushPerl.js"></script>
+<link href="../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#log_levels">LOG LEVELS</a></li>
+	<ul>
+
+		<li><a href="#level_0___debug">Level 0 - Debug</a></li>
+		<li><a href="#level_1___log_messages">Level 1 - Log messages</a></li>
+		<li><a href="#level_2___information_messages">Level 2 - Information messages</a></li>
+		<li><a href="#level_3___warnings">Level 3 - Warnings</a></li>
+		<li><a href="#level_4___errors">Level 4 - Errors</a></li>
+		<li><a href="#level_5___critical_errors">Level 5 - Critical Errors</a></li>
+	</ul>
+
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<ul>
+
+		<li><a href="#log_debug">log_debug</a></li>
+		<li><a href="#log_msg">log_msg</a></li>
+		<li><a href="#log_info__log_inform">log_info, log_inform</a></li>
+		<li><a href="#log_warn__log_warning">log_warn, log_warning</a></li>
+		<li><a href="#log_err__log_error">log_err, log_error</a></li>
+		<li><a href="#log_die">log_die</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>iAgent::Log - The core logging module for iAgnet</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides extended logging functionality to the iAgent system. It supports 5 levels of logging:</p>
+<p>
+</p>
+
+<h1><a name="log_levels">LOG LEVELS</a></h1>
+<p>
+</p>
+<h2><a name="level_0___debug">Level 0 - Debug</a></h2>
+<p>Debug, really detailed messages. This log level also includes some extra debug information about the caller.</p>
+<p>
+</p>
+<h2><a name="level_1___log_messages">Level 1 - Log messages</a></h2>
+<p>Not-so important messages, usually used for more verbose information.</p>
+<p>
+</p>
+<h2><a name="level_2___information_messages">Level 2 - Information messages</a></h2>
+<p>That's the common message level for the really basic messages, like 'starting', 'quitting' etc.</p>
+<p>
+</p>
+<h2><a name="level_3___warnings">Level 3 - Warnings</a></h2>
+<p>This level is used for warnings.</p>
+<p>
+</p>
+<h2><a name="level_4___errors">Level 4 - Errors</a></h2>
+<p>This level is used for non-fatal errors.</p>
+<p>
+</p>
+<h2><a name="level_5___critical_errors">Level 5 - Critical Errors</a></h2>
+<p>This level is used for fatal, non-recoverable errors that usually stops the execution of the program.</p>
+<p>
+</p>
+
+<h1><a name="functions">FUNCTIONS</a></h1>
+<p>
+</p>
+<h2><a name="log_debug">log_debug</a></h2>
+<p>Log a debug (Level 0) message</p>
+<p>
+</p>
+<h2><a name="log_msg">log_msg</a></h2>
+<p>Log an message (Level 1) message.</p>
+<p>
+</p>
+<h2><a name="log_info__log_inform">log_info, log_inform</a></h2>
+<p>Log an information (Level 2) message.</p>
+<p>
+</p>
+<h2><a name="log_warn__log_warning">log_warn, log_warning</a></h2>
+<p>Log an warning (Level 3) message.</p>
+<p>
+</p>
+<h2><a name="log_err__log_error">log_err, log_error</a></h2>
+<p>Log an error (Level 4) message.</p>
+<p>
+</p>
+<h2><a name="log_die">log_die</a></h2>
+<p>Log an fatal (Level 5) message. And exit with error.</p>
+<p>
+</p>
+
+<h1><a name="author">AUTHOR</a></h1>
+<p>Developed by Ioannis Charalampidis &lt;<a href="mailto:ioannis.charalampidis@cern.ch">ioannis.charalampidis@cern.ch</a>&gt; 2011-2012 at PH/SFT, CERN</p>
+
+</body>
+
+</html>

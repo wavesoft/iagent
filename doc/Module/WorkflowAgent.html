@@ -1,0 +1,120 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of Module::WorkflowAgent</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../resources/shCore.js"></script>
+<script type="text/javascript" src="../resources/shBrushPerl.js"></script>
+<link href="../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#broadcasted_messages">BROADCASTED MESSAGES</a></li>
+	<ul>
+
+		<li><a href="#workflow_started">workflow_started</a></li>
+	</ul>
+
+	<li><a href="#handled_messages">HANDLED MESSAGES</a></li>
+	<ul>
+
+		<li><a href="#workflow_invoke_workflow__permissions_username">workflow_invoke WORKFLOW, PERMISSIONS/USERNAME</a></li>
+		<li><a href="#workflow_abort_did">workflow_abort DID</a></li>
+	</ul>
+
+	<li><a href="#food_for_thought">FOOD FOR THOUGHT</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Module::WorkflowAgent - Workflow implementation agent</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides ability to invoke a workflow and monitor it's progress over the nework. It also provides all the
+logic that propage and monitor the workflow over the network.</p>
+<p>
+</p>
+
+<h1><a name="broadcasted_messages">BROADCASTED MESSAGES</a></h1>
+<p>
+</p>
+<h2><a name="workflow_started">workflow_started</a></h2>
+<p>
+</p>
+
+<h1><a name="handled_messages">HANDLED MESSAGES</a></h1>
+<p>
+</p>
+<h2><a name="workflow_invoke_workflow__permissions_username">workflow_invoke WORKFLOW, PERMISSIONS/USERNAME</a></h2>
+<p>This action will invoke a workflow either as a local action or as a remote action, depending on if our
+configuration supports it.</p>
+<p><code>ARG0</code> is an instance of a Module::Workflow::Definition object. The workflow will continue from the
+currently ACTIVE action of the definition.</p>
+<p><code>ARG1</code> is either a string that represents the name of the sender or a hash of permissions that the 
+requesting entity has.</p>
+<p>
+</p>
+<h2><a name="workflow_abort_did">workflow_abort DID</a></h2>
+<p>This action will abort a workflow that is in progress, notifying all the child nodes too.</p>
+<p><code>ARG0</code> is the definition id of the workflow you want to abort.</p>
+<p>
+</p>
+
+<h1><a name="food_for_thought">FOOD FOR THOUGHT</a></h1>
+<p>(Here are some thoughts regarding the lookup mechanism. You will find the refered part of the code if you search
+for 'TODO: See FOOD FOR THOUGHT' )</p>
+<p>The whole purpose of the LOOKUPS hash and the whole lookup state
+is to fetch as much information as possible from all the endpoints that can are capable to handle the
+action in order to avoid re-requesting lookup information and thus polluting the public channel.</p>
+<p>Now, in order to pile up responses in the same lookup hash we need an indexing key right?. Ideally we 
+will could use the action name... This will do the following:</p>
+<pre class="brush: perl">
+ - We request &quot;Who can handle 'Action'&quot;
+ - We pile all the responses under the same 'Action'
+ - We pick the first available target
+ - If somebody else wants to handle this action, we pick the next available from the same pile, etc...
+
+</pre>
+<p>This sounds very nice, but there is something important. We are not requesting &quot;Who can handle 'Action'&quot;
+but we are requesting &quot;Who can handle 'Action' under context { context }&quot;!</p>
+<p>This means that if the context of an action is invalid the endpoint will not respond at all! (And thus if we
+try to invoke this action again and we use the cached information we are going to miss those targets that 
+might not fail this time).</p>
+<p>How to include all of them? Without polluting the public message bus?? What would be the ideal index???</p>
+<p>A not-so-good solution will be to use the workflow definition ID (Which is generated once by the first invoking
+node) PLUS the action name. This is GOOD because usually when an entity rejects the action's context it will
+keep rejecting it for the entire workflow. It is BAD, because of the 'usually' in the previous sentence...</p>
+<p>If you have a better idea... go for it!</p>
+<p>
+</p>
+
+<h1><a name="author">AUTHOR</a></h1>
+<p>Developed by Ioannis Charalampidis &lt;<a href="mailto:ioannis.charalampidis@cern.ch">ioannis.charalampidis@cern.ch</a>&gt; 2011-2012 at PH/SFT, CERN</p>
+
+</body>
+
+</html>

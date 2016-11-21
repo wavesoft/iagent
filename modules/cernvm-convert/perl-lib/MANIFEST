@@ -1,0 +1,5 @@
+lib/Module/CernVM/Convert.pm
+bin/iagent-convert
+etc/cernvm-agent/config.d/convert.conf
+MANIFEST
+Makefile.PL

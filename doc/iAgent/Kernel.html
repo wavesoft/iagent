@@ -1,0 +1,353 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of iAgent::Kernel</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../resources/shCore.js"></script>
+<script type="text/javascript" src="../resources/shBrushPerl.js"></script>
+<link href="../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#functions">FUNCTIONS</a></li>
+	<ul>
+
+		<li><a href="#register_hashref">Register HASHREF</a></li>
+		<ul>
+
+			<li><a href="#module_manifests">Module manifests</a></li>
+			<li><a href="#poe_compatibility">POE Compatibility</a></li>
+		</ul>
+
+		<li><a href="#broadcast_message_____">Broadcast MESSAGE, ...</a></li>
+		<li><a href="#dispatch_message_____">Dispatch MESSAGE, ...</a></li>
+		<li><a href="#query_message_____">Query MESSAGE, ...</a></li>
+		<li><a href="#reply_message_____">Reply MESSAGE, ...</a></li>
+		<li><a href="#crash_error_message____hashref__">Crash ERROR_MESSAGE, [ HASHREF ]</a></li>
+		<li><a href="#registerhandler_session__message____message_______">RegisterHandler SESSION, MESSAGE, [ MESSAGE, ... ]</a></li>
+		<li><a href="#registerhandler_message____message_______">RegisterHandler MESSAGE, [ MESSAGE, ... ]</a></li>
+		<li><a href="#moduleloaded_string">ModuleLoaded STRING</a></li>
+		<li><a href="#exit_code">Exit CODE</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>iAgent::Kernel - The main iAgent Kernel</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This perl module provides a simple interface to register plug-in modules and to dispatch system-wide messages.</p>
+<p>
+</p>
+
+<h1><a name="functions">FUNCTIONS</a></h1>
+<p>
+</p>
+<h2><a name="register_hashref">Register HASHREF</a></h2>
+<p>Register a module on the iAgent system.</p>
+<p>This system instances the specified class, initializes it, wraps it in a POE session,
+and registers it on the broadcast system.</p>
+<p>Syntax:</p>
+<pre class="brush: perl">
+  iAgent::Kernel::Register({
+        
+        class =&gt; &quot;My::Module&quot;,       - The class name of the module to instance
+        args  =&gt; { .. args .. },     - The arguments passed to the C&lt;new&gt; function and C&lt;_start&gt; event
+        
+  })</pre>
+<p>
+</p>
+<h3><a name="module_manifests">Module manifests</a></h3>
+<p>All the special information regarding the module priority, the handled POE Events, the config etc. are
+provided by the module manifest. To define a module manifest, you should create a global MANIFEST variable
+in the class with the following syntax:</p>
+<pre class="brush: perl">
+  package mySystem::myModule;
+  use strict;
+  
+  our $MANIFEST = {
+        
+        #
+        # [1] Define the hooks for the PoE events
+        #     You have 3 options:
+        #
+        # a) Use automatic detection (default)
+        #     
+        # In this mode, the Kernel will scan the class subroutines and will
+        # convert the ones prefixed with the specified prefix into event
+        # handlers of the omonymous event. For example:
+        # 
+        #  sub __random_event () { }
+        #
+        # Will be called when the 'random_event' is dispatched.
+        #
+        # You can change the default prefix ('__') with your own, using the
+        # hooks_prefix field.
+        #
+        
+        hooks =&gt; 'AUTO',
+        hooks_prefix =&gt; '__',
+        
+        #
+        # b) Use only specified event handlers that have the same name
+        #     with the event
+        #
+        
+        hooks =&gt; [ 'start', 'stop', 'msg_arrived', 'msg_dispatched' ],
+        
+        #
+        # c) Explicitly define what subs handle what event
+        #
+        
+        hooks =&gt; {
+                'start' =&gt; 'start_handler',
+                'msg_arrived' =&gt;  'data_handler',
+                'data_arrived' =&gt; 'data_handler'
+        }
+        
+        #
+        # [2] Define the (optional) configuration file associated with this module
+        #
+        # This configuration file must be located on iAgent's etc folder.
+        #
+        
+        config =&gt; 'my_config.conf',
+        
+        #
+        # [3] Define the module priority
+        #
+        # Each module has a specific priority. When a event is dispatched it starts from
+        # the module with the highest priority until it reaches the target. This helps
+        # adding pre/post processing modules for the events. Some typical priorities follow:
+        #
+        # +----------+--------------------------------------------+
+        # | Priority |                  Typical use               |
+        # +----------+--------------------------------------------+
+        # |  0 ~ 1   | I/O Modules, such as the XMPP module       |
+        # |  2 ~ 4   | Filtering modules such as authentication,  |
+        # |          | authorization etc, such as LDAP Module     |
+    # |    5     | Default module priority                    |
+    # |  6 ~ 10  | Post-processing modules                    |
+    # +----------+--------------------------------------------+          
+    #
+    
+    priority =&gt; 6
+    
+  };</pre>
+<p>A typical manifest will have the following structure:</p>
+<pre class="brush: perl">
+  our $MANIFEST = {
+        config =&gt; 'your config here.conf',
+        priority =&gt; 5
+  };</pre>
+<p>If nothing specified (not even the $MANIFEST variable), the defaults are:</p>
+<pre class="brush: perl">
+  our $MANIFEST = {
+        hooks =&gt; 'AUTO',
+        hooks_prefix =&gt; '__',
+        priority =&gt; 5
+  };</pre>
+<p>
+</p>
+<h3><a name="poe_compatibility">POE Compatibility</a></h3>
+<p>The kernel creates a POE Session for each module. It uses an intuitive design in order to require less
+code while designing modules.</p>
+<p>First of all, you never create the PoE Session yourself. You only define the class for your module, and
+provide the required hook handlers. The system will then analyze your class, instance it and register it
+on the PoE and Broadcast system.</p>
+<p>The instance is performed that way:</p>
+<pre class="brush: perl">
+  $instance = new YOURCLASS ( \%CONFIG_FILE_HASH );</pre>
+<p>And then registered in a dedicated POE session that way:</p>
+<pre class="brush: perl">
+  POE::Session::Create(
+  
+    args =&gt; \%CONFIG_FILE_HASH,
+    
+    object_states =&gt; {
+        
+        $YOUR_OBJECT_INSTANCE =&gt; {
+                
+                # Automatically detected or manually
+                # defined (from the MANIFEST) hooks
+                ...
+                
+        }
+         
+    },
+    
+    heap =&gt; {
+        CLASS =&gt; 'Your::class::package::name',
+        MANIFEST =&gt; \%YOUR_CLASS_MANIFEST
+    }
+    
+  )</pre>
+<p>
+</p>
+<h2><a name="broadcast_message_____">Broadcast MESSAGE, ...</a></h2>
+<p>Asynchronously broadcast a message.</p>
+<p>This function posts a message to all the registered sessions (using the Register function). This 
+function exits immediately with return value '1', so no further processing can be done
+on the result.</p>
+<pre class="brush: perl">
+  iAgent::Kernel::Broadcast(
+    'message',
+    .. args ..
+  )</pre>
+<p>
+</p>
+<h2><a name="dispatch_message_____">Dispatch MESSAGE, ...</a></h2>
+<p>Synchronously broadcast a message.</p>
+<p>This function calls the specified message handler on each registered session, waits for a reply
+and continues accordingly:</p>
+<p>If the message handler returns <strong>0</strong> the message broadcasting stops. No upcoming plugin receives that
+message.</p>
+<p>If the message handler returns <strong>1</strong> the message broadcast continues. (Thats usually what you should
+always return)</p>
+<p>If the message handler returns any other value, the broadcast continues, and additionally the return
+value of the function is set to that value.</p>
+<pre class="brush: perl">
+  my $result = iAgent::Kernel::Dispatch(
+    'message',
+    .. args ..
+  )</pre>
+<p>The function retuns the following values:</p>
+<dl>
+<dt><strong><a name="1" class="item">-1</a></strong>
+
+<dd>
+<p>If no plugin received the event</p>
+</dd>
+</li>
+<dt><strong><a name="2" class="item">-2</a></strong>
+
+<dd>
+<p>If no plugin responded</p>
+</dd>
+</li>
+<li>
+<p>If the message dispatch was canceled</p>
+</li>
+<li>
+<p>If the message was processed successfuly</p>
+</li>
+<dt><strong><a name="anything_else" class="item">Anything else</a></strong>
+
+<dd>
+<p>If the message was processed successfuly, and the return value is the return value of the last handler's return value.</p>
+</dd>
+</li>
+</dl>
+<p>
+</p>
+<h2><a name="query_message_____">Query MESSAGE, ...</a></h2>
+<p>Query all the plugins</p>
+<p>This function is simmilar to <code>Dispatch</code>. However, this function just collects all the return
+values and stacks them in an array.</p>
+<p>The return value of this function is an array reference that conains the results of the called
+message handlers.</p>
+<pre class="brush: perl">
+  my $results = iAgent::Kernel::Query('message', ...);
+  
+  # The result is something like:
+  $results = {
+        
+        $object =&gt; # Return Value #
+        
+  };</pre>
+<p>
+</p>
+<h2><a name="reply_message_____">Reply MESSAGE, ...</a></h2>
+<p>Reply to a currently active message.</p>
+<p>It is recommended to use this function to reply to <code>Dispatch</code> or <code>Broadcast</code>, rather than using directly POE,
+becuase this function also processes the message through the plugin stack.</p>
+<p>This function detects the target and caller's position in the hierectary and then dispatches the event
+to all the plugins inbetween.</p>
+<pre class="brush: perl">
+  my $result = iAgent::Kernel::Reply(
+    'message',
+    .. args ..
+  )</pre>
+<p>
+</p>
+<h2><a name="crash_error_message____hashref__">Crash ERROR_MESSAGE, [ HASHREF ]</a></h2>
+<p>Notify a plugin crash</p>
+<p>This function is either called by an error trap or by the plugin itself when an unrecoverable error occured.
+This function will unregister the plugin from the message queue, do the appropriate cleanup and log/reporting
+and if possible, try to reload the plugin.</p>
+<p>If there was a successful restart, the event 'recovered' will be sent to the plugin, passing as first argument
+the hash that was passed to this function as a second argument. This enables a custom recovery handling
+mechanism for the plugins.</p>
+<p>This function should be called from within the plugin class and has the following syntax:</p>
+<pre class="brush: perl">
+  iAgent::Kernel::Crash(
+    'crash message',
+    { .. details hash .. } # Optional
+  )</pre>
+<p>
+</p>
+<h2><a name="registerhandler_session__message____message_______">RegisterHandler SESSION, MESSAGE, [ MESSAGE, ... ]</a></h2>
+<p>
+</p>
+<h2><a name="registerhandler_message____message_______">RegisterHandler MESSAGE, [ MESSAGE, ... ]</a></h2>
+<p>Inform the iAgent kernel that the calling session will handle the specified event(s) even though it's 
+not specified through the manifest.</p>
+<p>In order to optimize iAgent internal message dispatching mechanism, it's keeping a table of all the
+registered messages and dispatches them only on targets that can handle it. If a session registeres a
+POE message during run-time, the kernel will not be aware of this fact and will not deliver the message
+there. In order to bypass this, you need to call this function to update the module's capabilities.</p>
+<pre class="brush: perl">
+  $_[SESSION]-&gt;_register_state('dynamic_event', \&amp;_dyn_event );
+  iAgent::Kernel::RegisterHandler( 'dynamic_event' );</pre>
+<p>If your script is registering a handler on a different session, you can specify it as a first argument:</p>
+<pre class="brush: perl">
+  $other_session-&gt;_register_state('dynamic_event', \&amp;_dyn_event );
+  iAgent::Kernel::RegisterHandler( $other_session, 'dynamic_event' );</pre>
+<p>
+</p>
+<h2><a name="moduleloaded_string">ModuleLoaded STRING</a></h2>
+<p>Check if the specified module is loaded. Example:</p>
+<pre class="brush: perl">
+ if (!iAgent::Kernel::ModuleLoaded('iAgent::Module::XMPP')) {
+    log_die(&quot;You need an XMPP module!&quot;);
+ }</pre>
+<p>
+</p>
+<h2><a name="exit_code">Exit CODE</a></h2>
+<p>Shut down iAgent Kernel.</p>
+<p>Shuts down gracefully the kernel and all the sessions by sending the SIGQUIT signal to all of the active
+sessions.</p>
+<p>
+</p>
+
+<h1><a name="author">AUTHOR</a></h1>
+<p>Developed by Ioannis Charalampidis &lt;<a href="mailto:ioannis.charalampidis@cern.ch">ioannis.charalampidis@cern.ch</a>&gt; 2011-2012 at PH/SFT, CERN</p>
+
+</body>
+
+</html>

@@ -1,0 +1,6 @@
+lib/Module/CernVM/Builder.pm
+bin/iagent-builder
+etc/cernvm-agent/avatars/builder.png
+etc/cernvm-agent/config.d/builder.conf
+MANIFEST
+Makefile.PL

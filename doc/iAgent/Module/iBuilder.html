@@ -1,0 +1,298 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of iAgent::Module::iBuilder</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../../resources/shCore.js"></script>
+<script type="text/javascript" src="../../resources/shBrushPerl.js"></script>
+<link href="../../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#handled_actions">HANDLED ACTIONS</a></li>
+	<ul>
+
+		<li><a href="#archipel_ibuilder_projects_list">archipel:ibuilder:projects/list</a></li>
+		<li><a href="#archipel_ibuilder_projects_get">archipel:ibuilder:projects/get</a></li>
+		<li><a href="#archipel_ibuilder_config_get">archipel:ibuilder:config/get</a></li>
+		<li><a href="#archipel_ibuilder_config_add">archipel:ibuilder:config/add</a></li>
+	</ul>
+
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>iAgent::Module::iBuilder - iBuilder Plugin for iAgent</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides ability to manage iBuilder Projects and monitor the building process.</p>
+<p>
+</p>
+
+<h1><a name="handled_actions">HANDLED ACTIONS</a></h1>
+<p>
+</p>
+<h2><a name="archipel_ibuilder_projects_list">archipel:ibuilder:projects/list</a></h2>
+<p>This action is a request to list the currently registered iBuilder proejcts.</p>
+<p>Request:</p>
+<pre class="brush: perl">
+    &lt;query xmlns=&quot;archipel:ibuilder:projects&quot;&gt;
+        &lt;archipel action=&quot;list&quot;&gt;
+    &lt;/query&gt;</pre>
+<p>Reply:</p>
+<pre class="brush: perl">
+    &lt;project dir=&quot;dirname&quot; name=&quot;projectname&quot;&gt;
+        &lt;version ver=&quot;1&quot; title=&quot;title&quot; description=&quot;short description of the project&quot; /&gt;
+        ...
+    &lt;/project&gt;
+    ...
+    &lt;model name=&quot;..&quot; group=&quot;..&quot; description=&quot;..&quot; /&gt;
+    ..
+    &lt;stage name=&quot;..&quot; stage=&quot;..&quot;&gt;
+        &lt;target project=&quot;..&quot; model=&quot;..&quot; imagetype=&quot;..&quot; arch=&quot;..&quot; uid=&quot;..&quot;&gt;
+    &lt;/stage&gt;
+    ..</pre>
+<p>
+</p>
+<h2><a name="archipel_ibuilder_projects_get">archipel:ibuilder:projects/get</a></h2>
+<p>This action is a request to return the configuration data for the specified project directory.</p>
+<p>Request:</p>
+<pre class="brush: perl">
+    &lt;query xmlns=&quot;archipel:ibuilder:projects&quot;&gt;
+        &lt;archipel action=&quot;get&quot; dir=&quot;dirname&quot;&gt;
+    &lt;/query&gt;</pre>
+<p>Reply:</p>
+<pre class="brush: perl">
+    &lt;project dir=&quot;dirname&quot; name=&quot;projectname&quot;&gt;
+        &lt;version ver=&quot;1&quot; title=&quot;title&quot; description=&quot;short description of the project&quot; /&gt;
+        ...
+    &lt;/project&gt;
+    ...</pre>
+<p>
+</p>
+<h2><a name="archipel_ibuilder_config_get">archipel:ibuilder:config/get</a></h2>
+<p>This action is a request to return the configuration data for the specified project directory.</p>
+<p>Request:</p>
+<pre class="brush: perl">
+    &lt;query xmlns=&quot;archipel:ibuilder:config&quot;&gt;
+        &lt;archipel action=&quot;get&quot;&gt;
+    &lt;/query&gt;</pre>
+<p>Reply:</p>
+<pre class="brush: perl">
+    &lt;manager name=&quot;..&quot; handler=&quot;..&quot; proxy=&quot;..&quot;&gt;
+    ...
+    &lt;platform name=&quot;..&quot; label=&quot;..&quot; manager=&quot;..&quot; /&gt;
+    ...
+    &lt;repository name=&quot;..&quot; label=&quot;..&quot; manager=&quot;..&quot; /&gt;
+    ...
+    &lt;stage name=&quot;..&quot; suffix=&quot;..&quot; description=&quot;..&quot; /&gt;
+    ...
+    &lt;imagetype name=&quot;..&quot; hypervisor=&quot;..&quot; description=&quot;..&quot; seed=&quot;..&quot; suffix=&quot;..&quot; flavor=&quot;..&quot; handler=&quot;..&quot; /&gt;
+    ...
+    &lt;architecture name=&quot;&quot; flavour=&quot;&quot; ec2=&quot;&quot; /&gt;
+    ...
+    
+=cut</pre>
+<p>############################################
+# Handle the 'get config' action
+sub iq_get_config {
+############################################
+    my ($self, $project) = @_;        
+    my @config;</p>
+<pre class="brush: perl">
+    # Fetch all configs to @config array
+    for my $file ($self-&gt;{conf_local}, $self-&gt;{conf_global}) {
+       if ( -f &quot;$file&quot; ) {
+           my $cfg = &quot;$file&quot;;
+           open(CFG, &quot;&lt;$cfg&quot; );
+           while(&lt;CFG&gt;) {
+              my($line) = $_;
+              push @config, $line;
+           }
+           close(CFG);
+       }
+    }
+    
+    # Merge the multiple configs
+    my $c = new Config::General(
+         -String =&gt; \@config,
+         -AllowMultiOptions =&gt; &quot;no&quot;,
+         -MergeDuplicateOptions =&gt; &quot;yes&quot;,
+         -MergeDuplicateBlocks =&gt; &quot;yes&quot;,
+         )-&gt;{DefaultConfig};
+    
+    # Build the response
+    my $xml = '';
+    for my $NAME (keys %{$c-&gt;{managers}}) {
+        my $item = $c-&gt;{managers}-&gt;{$NAME};
+        $xml.='&lt;manager name=&quot;'.encode_entities($NAME).
+                   '&quot; handler=&quot;'.encode_entities($item-&gt;{handler}).
+                   '&quot; proxy=&quot;'.encode_entities($item-&gt;{conaryProxy}).'&quot; /&gt;';
+    }
+    for my $NAME (keys %{$c-&gt;{platforms}}) {
+        my $item = $c-&gt;{platforms}-&gt;{$NAME};
+        $xml.='&lt;platform name=&quot;'.encode_entities($NAME).
+                   '&quot; label=&quot;'.encode_entities($item-&gt;{label}).
+                   '&quot; manager=&quot;'.encode_entities($item-&gt;{type}).'&quot; /&gt;';
+    }
+    for my $NAME (keys %{$c-&gt;{repositories}}) {
+        my $item = $c-&gt;{repositories}-&gt;{$NAME};
+        $xml.='&lt;repository name=&quot;'.encode_entities($NAME).
+                   '&quot; label=&quot;'.encode_entities($item-&gt;{label}).
+                   '&quot; manager=&quot;'.encode_entities($item-&gt;{type}).'&quot; /&gt;';
+    }
+    for my $NAME (keys %{$c-&gt;{stages}}) {
+        my $item = $c-&gt;{stages}-&gt;{$NAME};
+        $xml.='&lt;stage name=&quot;'.encode_entities($NAME).
+                   '&quot; suffix=&quot;'.encode_entities($item-&gt;{suffix}).
+                   '&quot; description=&quot;'.encode_entities($item-&gt;{description}).'&quot; /&gt;';
+    }
+    for my $NAME (keys %{$c-&gt;{types}}) {
+        my $item = $c-&gt;{types}-&gt;{$NAME};
+        $xml.='&lt;imagetype name=&quot;'.encode_entities($NAME).
+                   '&quot; hypervisor=&quot;'.encode_entities($item-&gt;{hypervisor}).
+                   '&quot; description=&quot;'.encode_entities($item-&gt;{description}).'&quot; /&gt;';
+    }
+    for my $NAME (keys %{$c-&gt;{architectures}}) {
+        my $item = $c-&gt;{architectures}-&gt;{$NAME};
+        $xml.='&lt;architecture name=&quot;'.encode_entities($NAME).
+                   '&quot; flavor=&quot;'.encode_entities($item-&gt;{flavor}).
+                   '&quot; ec2=&quot;'.encode_entities($item-&gt;{ec2}).'&quot; /&gt;';
+    }</pre>
+<pre class="brush: perl">
+    # Reply the xml buffer
+    iAgent::Kernel::Reply('comm_reply', { data =&gt; $xml });
+    
+}</pre>
+<p>
+</p>
+<h2><a name="archipel_ibuilder_config_add">archipel:ibuilder:config/add</a></h2>
+<p>Add a configuration parameter to the global/local configuration files</p>
+<p>Request:</p>
+<pre class="brush: perl">
+    &lt;query xmlns=&quot;archipel:ibuilder:config&quot;&gt;
+    
+        &lt;archipel action=&quot;add&quot;&gt;
+        
+                    &lt;manager name=&quot;..&quot; handler=&quot;..&quot; proxy=&quot;..&quot;&gt;
+                    ...
+                    &lt;platform name=&quot;..&quot; label=&quot;..&quot; manager=&quot;..&quot; /&gt;
+                    ...
+                    &lt;repository name=&quot;..&quot; label=&quot;..&quot; manager=&quot;..&quot; /&gt;
+                    ...
+                    &lt;stage name=&quot;..&quot; suffix=&quot;..&quot; description=&quot;..&quot; /&gt;
+                    ...
+                    &lt;imagetype name=&quot;..&quot; hypervisor=&quot;..&quot; description=&quot;..&quot; seed=&quot;..&quot; suffix=&quot;..&quot; flavor=&quot;..&quot; handler=&quot;..&quot; /&gt;
+                    ...
+                    &lt;architecture name=&quot;&quot; flavour=&quot;&quot; ec2=&quot;&quot; /&gt;
+                    ...
+        
+        &lt;/archipel&gt;
+    &lt;/query&gt;
+
+</pre>
+<p>Reply:
+    
+=cut</p>
+<p>############################################
+# EXPERIMENTAL: Save global configuration
+sub iq_save_config {
+    my ($self, $method, $XML) = @_;
+    
+    # Prepare config depending on save method
+    my $_conf = new Config::General($self-&gt;{conf_local});
+    my %config_local = $_conf-&gt;getall;
+    $_conf = new Config::General($self-&gt;{conf_global});
+    my %config_global = $_conf-&gt;getall;
+    
+    for my $NODE (@{$XML-&gt;children()}) {
+    	
+    	
+    	
+    }</p>
+<p>############################################
+}</p>
+<p>###########################################
+#+---------------------------------------+#
+#|            EVENT HANDLERS             |#
+#|                                       |#
+#| All the functions prefixed with '__'  |#
+#| are handling the respective event     |#
+#+---------------------------------------+#
+###########################################</p>
+<p>############################################
+# Handle the arrived actions
+sub __comm_action { # Handle action arrival
+############################################
+	my ($self, $kernel, $packet) = @_[ OBJECT, KERNEL, ARG0 ];
+	if ($packet-&gt;{context} eq $XMLNS_IBUILDER_PROJECT) {
+		# Filter only archipel:ibuilder namespace
+		
+		log_debug(&quot;Got iBuilder IQ. Asking for: &quot;.$packet-&gt;{action});
+		
+		# Dispatch actions to handlers
+		if ($packet-&gt;{action} eq 'list') {
+			
+			# Return a list of the currently defined projects
+			$self-&gt;<code>iq_list_projects()</code>;
+			
+		} elsif ($packet-&gt;{action} eq 'get') {
+			
+			# Validate request
+			if (not defined $packet-&gt;{parameters}-&gt;{dir}) {
+                iAgent::Kernel::Reply('comm_reply_error', {type=&gt; 'bad-request', message=&gt; 'Missing &quot;dir&quot; attribute from &quot;get&quot; action', code=&gt;601 });
+                return 0;
+			}
+			
+			# Return the config file of that project
+			$self-&gt;iq_get_project($packet-&gt;{parameters}-&gt;{dir});
+			
+		} else {
+			
+			# Not a valid action
+			iAgent::Kernel::Reply('comm_reply_error', {type=&gt; 'bad-request', message=&gt; 'The action was not understood', code=&gt;600 });
+			
+		}
+		
+	} elsif ($packet-&gt;{context} eq $XMLNS_IBUILDER_CONFIG) {
+		
+		# Dispatch actions to handlers
+		if ($packet-&gt;{action} eq 'get')  {
+			
+			# Reply config
+			$self-&gt;<code>iq_get_config()</code>;
+			
+		}
+    	
+	}
+	
+	return 1; # Allow further execution
+}</p>
+<p>1;</p>
+
+</body>
+
+</html>

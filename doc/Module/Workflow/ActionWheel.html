@@ -1,0 +1,179 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of Module::Workflow::ActionWheel</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../../resources/shCore.js"></script>
+<script type="text/javascript" src="../../resources/shBrushPerl.js"></script>
+<link href="../../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#fsm_states">FSM STATES</a></li>
+	<li><a href="#public_methods">PUBLIC METHODS</a></li>
+	<ul>
+
+		<li><a href="#new___arguments__">new [ ARGUMENTS ]</a></li>
+		<li><a href="#invoke_uuid__action__type__context__user_data">invoke UUID, ACTION, TYPE, CONTEXT, USER_DATA</a></li>
+		<li><a href="#abort_uuid__reason">abort UUID, REASON</a></li>
+		<li><a href="#response_action__status__from">response ACTION, STATUS, FROM</a></li>
+		<li><a href="#completed_uuid__context__result">completed UUID, CONTEXT, RESULT</a></li>
+		<li><a href="#failed_uuid__reason">failed UUID, REASON</a></li>
+		<li><a href="#retry_uuid__reason____max_retries__">retry UUID, REASON, [ MAX_RETRIES ]</a></li>
+		<li><a href="#keepalive_action_uuid">keepalive ACTION_UUID</a></li>
+	</ul>
+
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Module::Workflow::ActionWheel - Workflow POE Wheel helper for the action lookup and invocation process</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This wheel provides the lookup/invocation and monitoring of a set of running or pending actions. This wheel is ideal
+to handle infinite concurrently running actions under the model of looking up -&gt; pick target -&gt; invoke.</p>
+<p>
+</p>
+
+<h1><a name="fsm_states">FSM STATES</a></h1>
+<p>Each action goes through the following states:</p>
+<pre class="brush: perl">
+                                   +-----------------+
+                                   |                 |
+        +---------------------- (TIMEOUT) ------+    v
+        |                          ^            ^    |
+        v                          |            |    |
+ [ SCHEDULED ] -&gt; LOOKUP   -&gt;   STARTING -&gt;  ACTIVE ---&gt; [ COMPLETED ]
+                   | ^             |            |    |
+                   v |             v            |    |
+           (LOOKUP_TIMEOUT) -&gt; [ FAILED ]  &lt;- --+    |
+                                   ^                 v
+                                   |                 |
+                                   +-----------------+</pre>
+<p>Each lookup request goes through the following states:</p>
+<p>* States in (paranthesis) are virtual states. States in [Brackets] are terminal states.</p>
+<pre class="brush: perl">
+ [ SCHEDULED ] -&gt;</pre>
+<p>
+</p>
+
+<h1><a name="public_methods">PUBLIC METHODS</a></h1>
+<p>
+</p>
+<h2><a name="new___arguments__">new [ ARGUMENTS ]</a></h2>
+<p>Constructs a new action helper. Parameters that can/must be supplied:</p>
+<p>Invoking/aborting actions:</p>
+<pre class="brush: perl">
+   LookupHandler =&gt;                     Lookup for targets that are capable of handling this action
+                                                                ARG0 : [out] The action name
+                                                                ARG1 : [out] The context of the action
+ 
+   InvokeHandler =&gt;                     Invoke an action to a specified target
+                                                                ARG0 : [out] The UUID of the action
+                                                                ARG1 : [out] The action name
+                                                                ARG2 : [out] The action type
+                                                                ARG3 : [out] The context of the action
+                                                                ARG4 : [out] The name of the target
+                                                                ARG5 : [in/out] User-defined data for this action
+ 
+   AbortHandler =&gt;                      Abort a previously invoked action
+                                                                ARG0 : [out] The UUID of the action
+                                                                ARG1 : [out] The action name
+                                                                ARG2 : [out] The context of the action
+                                                                ARG3 : [out] The name of the target
+                                                                ARG4 : [in/out] User-defined data for this action</pre>
+<p>Status notifications:</p>
+<pre class="brush: perl">
+ 
+   CompletedHandler =&gt;          Notify the completion of an action
+                                                            ARG0 : [out] The UUID of the action
+                                                                ARG1 : [out] The action name
+                                                                ARG2 : [out] The context of the action
+                                                                ARG3 : [out] The return code
+                                                                ARG4 : [in/out] User-defined data for this action
+ 
+   FailedHandler =&gt;                     Notify that an action was unable to be invoked
+                                                                ARG0 : [out] The UUID of the action
+                                                                ARG1 : [out] The action name
+                                                                ARG2 : [out] The context of the action
+                                                                ARG3 : [out] Error return code
+                                                                ARG4 : [out] Error description
+                                                                ARG5 : [in/out] User-defined data for this action
+ 
+   KeepaliveHandler =&gt;          Update the keepalive timers of the specified action
+                                                                ARG0 : [out] The UUID of the action
+                                                                ARG1 : [out] The action name
+                                                                ARG2 : [out] The context of the action
+                                                                ARG3 : [in/out] User-defined data for this action</pre>
+<p>
+</p>
+<h2><a name="invoke_uuid__action__type__context__user_data">invoke UUID, ACTION, TYPE, CONTEXT, USER_DATA</a></h2>
+<p>Invoke the requested action. This will shcedule the action for execution when a free slot is available. It will send a lookup
+request by invoking the <code>LookupHandler</code> and will wait for a call to <code>response</code>.</p>
+<p>The last parameter is a user-defined hash reference that will be sent along with all the action notifications. You can store
+custom information there, such as the active workflow, server information etc.</p>
+<p>If no response is received after a period of time it will fail, calling the <code>FailedHandler</code>.</p>
+<p>
+</p>
+<h2><a name="abort_uuid__reason">abort UUID, REASON</a></h2>
+<p>Abort the specified action. This will invoke the <code>AbortHandler</code> that should perform the required cleanups on the remote
+or local endpoint. No response is expected. It will raise <code>FailedHandler</code> when it finishes cleanup.</p>
+<p>
+</p>
+<h2><a name="response_action__status__from">response ACTION, STATUS, FROM</a></h2>
+<p>This function must be called when we got a response to the <code>LookupHandler</code>. It will tell the ActionWheel if it should
+continue with the action invocation or it should try another target.</p>
+<p><code>STATUS</code> can be:</p>
+<pre class="brush: perl">
+ &quot;free&quot;         If the action handler is available for handling this action.
+ &quot;busy&quot;         If the action handler is capable of handling this action, but is currently busy.
+ &quot;invalid&quot;      If the action handler is capable of handling this action, but the context is invalid.</pre>
+<p>Anything else will be considered as 'invalid'.</p>
+<p><code>FROM</code> is a string that represents the source entity that sent this response. It will be used for indexing and will be
+passed as-is on the <code>InvokeHandler</code> to start the action.</p>
+<p>
+</p>
+<h2><a name="completed_uuid__context__result">completed UUID, CONTEXT, RESULT</a></h2>
+<p>This function must be called when a previously invoked action is competed. This will update trigger the appropriate
+events and process the action stack.</p>
+<p>
+</p>
+<h2><a name="failed_uuid__reason">failed UUID, REASON</a></h2>
+<p>This function should be called when the action previously requested by <code>InvokeHandler</code> was unable to be invoked.</p>
+<p>
+</p>
+<h2><a name="retry_uuid__reason____max_retries__">retry UUID, REASON, [ MAX_RETRIES ]</a></h2>
+<p>Something went wrong, but not critically. Try to re-start the action.</p>
+<p><code>MAX_RETRIES</code> can be specified if you want to adjust the default MAX_ACTION_RETRIES value.</p>
+<p>
+</p>
+<h2><a name="keepalive_action_uuid">keepalive ACTION_UUID</a></h2>
+<p>This method should be called when there was a feedback of any sort from the invoked action. This will reset the keep-alive
+timer that will fire if there was no feedback from the remote endpoint after a long period of time.</p>
+
+</body>
+
+</html>

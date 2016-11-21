@@ -1,0 +1,6 @@
+lib/Module/CernVM/Storage.pm
+lib/Module/CernVM/Storage/Chirp.pm
+bin/iagent-storage
+etc/cernvm-agent/config.d/storage.conf
+MANIFEST
+Makefile.PL

@@ -1,0 +1,252 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of Module::WorkflowRunner</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../resources/shCore.js"></script>
+<script type="text/javascript" src="../resources/shBrushPerl.js"></script>
+<link href="../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#manifest_definition">MANIFEST DEFINITION</a></li>
+	<ul>
+
+		<li><a href="#1__external_program">1) EXTERNAL PROGRAM</a></li>
+		<li><a href="#2__threaded_code">2) THREADED CODE</a></li>
+	</ul>
+
+	<li><a href="#handled_messages">HANDLED MESSAGES</a></li>
+	<ul>
+
+		<li><a href="#workflow_action_invoke_hashref">workflow_action_invoke HASHREF</a></li>
+		<li><a href="#workflow_action_abort_hashref">workflow_action_abort HASHREF</a></li>
+	</ul>
+
+	<li><a href="#broadcasted_messages">BROADCASTED MESSAGES</a></li>
+	<ul>
+
+		<li><a href="#workflow_action_stdout_hashref">workflow_action_stdout HASHREF</a></li>
+		<li><a href="#workflow_action_stderr_hashref">workflow_action_stderr HASHREF</a></li>
+		<li><a href="#workflow_action_completed_hashref">workflow_action_completed HASHREF</a></li>
+	</ul>
+
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Module::WorkflowRunner - Workflow Runner module</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides the listening endpoint that can be controlled by the WorkflowInvoker. It exposes
+all the actions defined through the &quot;WORKFLOW&quot; manifest parameter.</p>
+<p>
+</p>
+
+<h1><a name="manifest_definition">MANIFEST DEFINITION</a></h1>
+<p>In order to register your own custom workflow-capable actions, in your module you have to define the following
+manifest parameter:</p>
+<pre class="brush: perl">
+ our $MANIFEST = {
+    WORKFLOW =&gt; {
+        actions =&gt; {
+            
+            #
+            # [1] EXTERNAL EXECUTION MODE
+            #
+                        
+            &quot;&lt;exposed action name&gt;&quot; =&gt; {
+                
+                # Run an extenral program
+                run =&gt; &quot;&lt;cmdline&gt;&quot;,
+                mode =&gt; &quot;exec&quot;,
+                
+                # Human-readable description
+                description =&gt; &quot;What am I doing?&quot;,
+ 
+                # How many concurrent jobs we can run
+                concurrent =&gt; 4,
+                
+                # Required input parameters
+                parameters =&gt; [ 'parameter', 'optional_parameter?' ]
+                
+                # Preprocessor
+                handle_input =&gt; '&lt;preprocessor POE message&gt;',
+                
+                # Postprocessor
+                handle_output =&gt; '&lt;postprocessor POE message&gt;',
+ 
+                # Validator
+                handle_validation =&gt; '&lt;postprocessor POE message&gt;'
+                
+            },
+            
+            #
+            # [2] THREADED CODE EXECUTION MODE
+            #
+                        
+            &quot;&lt;exposed action name&gt;&quot; =&gt; {
+                
+                # Run an function in my package in a different
+                # thread, asynchronously
+                run =&gt; &quot;&lt;sub_name&gt;&quot;,
+                mode =&gt; &quot;async&quot;,
+                
+                # Human-readable description
+                description =&gt; &quot;What am I doing?&quot;,
+                
+                # Required input parameters
+                parameters =&gt; [ 'parameter', 'optional_parameter?' ]
+ 
+                # How many concurrent jobs we can run
+                concurrent =&gt; 4,
+                
+                # Preprocessor
+                handle_input =&gt; '&lt;preprocessor POE message&gt;',
+                
+                # Postprocessor
+                handle_output =&gt; '&lt;postprocessor POE message&gt;',
+ 
+                # Validator
+                handle_validation =&gt; '&lt;postprocessor POE message&gt;'
+                
+            },            
+            
+        }
+    }
+ }</pre>
+<p>
+</p>
+<h2><a name="1__external_program">1) EXTERNAL PROGRAM</a></h2>
+<p>In external program execution mode (mode =&gt; 'exec') a new program will be started in a separate thread. The
+command line is either pre-defined through the 'run' parameter, or through the preprocessor.</p>
+<p>The <strong>handle_input</strong> is a POE message that will be sent right before the execution. <code>ARG0</code> is a reference to a
+hash that defines the action name and it's parameters. It's structure is the following:</p>
+<pre class="brush: perl">
+ {
+    action =&gt; 'name',
+    id =&gt; 'action uuid',
+    context =&gt; { .. }
+ }</pre>
+<p><code>ARG1</code> is an array reference that holds the command-line. The first element is the application and the rest
+are the command-line arguments.</p>
+<p>The <strong>handle_output</strong> is a POE message that will be sent after the execution. <code>ARG0</code> is a reference to a hash
+that contains all the information. This hash has the following structure:</p>
+<pre class="brush: perl">
+ {
+    action =&gt; '&lt;the name of the action&gt;',
+ 
+    stdout =&gt; '&lt;the stdout of the program&gt;',
+    stderr =&gt; '&lt;the stderr of the program&gt;',
+    result =&gt; '&lt;the result code of the executed program&gt;',
+ 
+    id =&gt; '&lt;The unique id of the action&gt;'
+    context =&gt; { .. }
+ }</pre>
+<p>The <strong>handle_validation</strong> is a POE message that will be sent before a reply is sent to requesting entity. It should
+validate the input and reply with <code>RET_OK</code> if everything is OK or <code>RET_ABORT</code> / <code>RET_ERROR</code> otnerwise. The <code>ARG0</code> 
+of this event is a hash with the following structure:</p>
+<pre class="brush: perl">
+ {
+    action =&gt; 'name',
+    id =&gt; 'action uuid',
+    context =&gt; { .. }
+ }</pre>
+<p>
+</p>
+<h2><a name="2__threaded_code">2) THREADED CODE</a></h2>
+<p>In threaded execution code mode (mode =&gt; 'thread') the specified sub of the class is executed in another
+thread. The new thread is started by forking out of the current thread. (Note: <code>run</code> is the name of the sub,
+ it's not a POE message!)</p>
+<p>The input handler is handled in the same way as the previous mode, however <code>ARG1</code> is a reference to the 
+parameters hash that will be passed as the <code>ARG1</code> parameter to the threaded sub.</p>
+<p>All the output is processed in the same was as the previous mode.</p>
+<p>
+</p>
+
+<h1><a name="handled_messages">HANDLED MESSAGES</a></h1>
+<p>This module handles the following messages:</p>
+<p>
+</p>
+<h2><a name="workflow_action_invoke_hashref">workflow_action_invoke HASHREF</a></h2>
+<p>Invoke the specified action, with the specified unique ID and context. <code>ARG0</code> is a referene to a hash
+that contains all the usefull information. It has the following structure:</p>
+<pre class="brush: perl">
+ {
+    action =&gt; '&lt;the name of the action&gt;',
+    id =&gt; '&lt;unique ID&gt;',
+    context =&gt; { ... }
+ }</pre>
+<p>The return value of this message is RET_OK if the action was successfully invoked, RET_BUSY if the action
+is already running or RET_UNHANDLED if such action does not exist.</p>
+<p>
+</p>
+<h2><a name="workflow_action_abort_hashref">workflow_action_abort HASHREF</a></h2>
+<p>Abort a previously invoked action. <code>ARG0</code> is a hash reference with the following structure:</p>
+<pre class="brush: perl">
+ {
+    id =&gt; '&lt;unique ID of the previously invoked action&gt;'
+ }</pre>
+<p>
+</p>
+
+<h1><a name="broadcasted_messages">BROADCASTED MESSAGES</a></h1>
+<p>This module broadcasts the following messages</p>
+<p>
+</p>
+<h2><a name="workflow_action_stdout_hashref">workflow_action_stdout HASHREF</a></h2>
+<p>
+</p>
+<h2><a name="workflow_action_stderr_hashref">workflow_action_stderr HASHREF</a></h2>
+<p>We have standard output/error feedback from the previously launched action. The <code>ARG0</code> is a hash reference
+that contains all the relevant information:</p>
+<pre class="brush: perl">
+ {
+    action =&gt; '&lt;the name of the action&gt;',
+    id =&gt; '&lt;unique ID&gt;',
+    context =&gt; { ... },
+    text =&gt; '&lt;STDOUT/STDERR Line&gt;'
+ }</pre>
+<p>
+</p>
+<h2><a name="workflow_action_completed_hashref">workflow_action_completed HASHREF</a></h2>
+<p>The previously invoked action is completed. The <code>ARG0</code> is a has reference that contains all the relevant
+information:</p>
+<pre class="brush: perl">
+ {
+    action =&gt; '&lt;the name of the action&gt;',
+    id =&gt; '&lt;unique ID&gt;',
+    context =&gt; { ... },
+ 
+    stdout =&gt; '&lt;The entire STDOUT buffer&gt;',
+    stderr =&gt; '&lt;The entire STDOUT buffer&gt;',
+    result =&gt; '&lt;The result code&gt;',
+    
+ }</pre>
+
+</body>
+
+</html>

@@ -1,0 +1,210 @@
+#!/usr/bin/perl
+#
+# iAgent configuration helper
+#
+# iAgent is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# iAgent is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with iAgent. If not, see <http://www.gnu.org/licenses/>.
+#
+# Developed by Ioannis Charalampidis 2011-2012 at PH/SFT, CERN
+# Contact: <ioannis.charalampidis[at]cern.ch>
+#
+
+use strict;
+use warnings;
+use File::Basename;
+
+# The names of the files already processed
+my $processed = { };
+
+############################################
+# Replace a string without using RegExp.
+sub str_replace {
+############################################
+	my $replace_this = shift;
+	my $with_this  = shift; 
+	my $string   = shift;
+	
+	my $length = length($string);
+	my $target = length($replace_this);
+	
+	for(my $i=0; $i<$length - $target + 1; $i++) {
+		if(substr($string,$i,$target) eq $replace_this) {
+			$string = substr($string,0,$i) . $with_this . substr($string,$i+$target);
+			return $string; #Comment this if you what a global replace
+		}
+	}
+	return $string;
+}
+
+############################################
+# Process the specified file and replace
+sub process_file {
+############################################
+    my ($file) = @_;
+    my @processed;
+    my $foundToken=0;
+    my @include;
+    my $message="Specify configurable parameters for file $file:";
+    my $prev_values = { };
+    
+    # Open file
+    open FILES, "<$file";
+    
+    # Check if write permission exists
+    if( not -w FILES ) {
+    	# Return error and exit
+    	print "No write permission in file $file\n";
+    	exit();
+    }
+    
+    # Process file    
+    foreach my $line (<FILES>) {
+        
+        # Take this opportunity to locate "Include" directives
+        if ($line =~ m/\s*Include\s+(['"])(.*?)\1/) {
+            push @include, $2;
+        }
+        
+        # Replace tokens
+        while ($line =~ m/<\%(.*?)%>/) {
+            my $replace_src = '<%'.$1.'%>';
+            my $display = $1;
+            my $def = '';
+            
+            # Display intro message if not done already
+            if ($message ne '') {
+                print "\n$message\n";
+                $message='';
+            }
+
+            # Trim spaces
+            $display =~ s/^\s*//;
+            $display =~ s/\s*$//;
+            
+            # Set default value
+            if ($display =~ m/\s*:\s+(.*)/) {
+                $def=$1;
+                $display =~ s/\s*:.*//;
+            }
+
+            # Use previous value if we meet again the same display string
+            my $ans = '';
+            if (defined($prev_values->{$display})) {
+                $ans = $prev_values->{$display};
+                
+            } else {
+            
+                # Read input
+                while ($ans eq '') {
+                    local $| = 1;
+                    print " $display ";  
+                    print "<$def> " if ($def ne '');
+                    print ": ";
+                    chomp($ans = <STDIN>);
+                    if ($ans eq '') {
+                        if ($def eq '') {
+                            print " (!) Please specify a non-zero string!\n\n" if ($ans eq '');
+                        } else {
+                            $ans=$def;
+                        }
+                    } else {
+                        $foundToken=1;
+                    }
+                }
+                
+            }
+            
+            # Replace line
+            $line = str_replace($replace_src, $ans, $line);
+            
+            # Store previous value
+            $prev_values->{$display} = $ans;
+            
+        }
+        push @processed, $line;
+    }
+    close FILES;
+    
+    # If we didn't do anything, dont write the file
+    return  \@include if ($foundToken == 0);
+    
+    # Replace file
+    open FILES, ">$file";
+    foreach (@processed) {
+        print FILES $_;
+    }
+    close FILES;
+    
+    # Return the included files
+    return \@include;
+    
+}
+
+############################################
+# Process one file or a batch of files
+# This function will traverse into nested
+# filenames if there are 'Include' directives
+# found.
+sub process_batch {
+############################################
+    my ($batch) = @_;
+    foreach my $file (eval("<$batch>")) {
+        my $name = basename($file);
+        next if (substr($name,0,1) eq '.');
+        next if (substr($name,-5) ne '.conf');
+        next if (defined($processed->{$file}));
+        
+        # Process the specified file and return the include directives
+        my @files = @{process_file($file)};
+        $processed->{$file}=1;
+        foreach (@files) {
+            $_=dirname($file).'/'.$_ if (substr($_,0,1) ne '/');
+            process_batch($_);
+        }
+        
+    }
+    
+}
+
+# Print banner
+print "iAgent Configuration Utility - v0.3.1\n";
+
+# Select an ETC folder
+my $etc = '';
+if (scalar @ARGV != 0) { # Use ETC folder provided by the user
+    $etc = shift(@ARGV);
+    
+} elsif (-d '/etc/cernvm-agent') { # Check global ETC
+    $etc='/etc/cernvm-agent';
+    
+} elsif (-d '/usr/etc/cernvm-agent') { # Check local ETC
+    $etc='/usr/etc/cernvm-agent';
+
+} elsif (-d '/usr/local/etc/cernvm-agent') { # Check local ETC
+    $etc='/usr/local/etc/cernvm-agent';
+
+} elsif (-d "$ENV{HOME}/.iagent/etc") { # Check for user's iagent & etc
+    $etc = "$ENV{HOME}/.iagent/etc";
+    push @INC, "$ENV{HOME}/.iagent/lib" if (-d "$ENV{HOME}/.iagent/lib");
+    
+} else {
+    die("Unable to locate the configuration folder! Please specify it as the first command-line parameter");
+    
+}
+
+# Process etc folder
+print "Using configuration files found on folder '$etc'\n";
+process_batch($etc.'/*.conf');
+
+print "\n";
+print "Configuration files updated\n";

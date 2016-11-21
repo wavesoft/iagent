@@ -1,0 +1,24 @@
+
+==[ INSTALLATION ]====================
+
+Required perl modules:
+
+ * POE
+ * Config::General
+ * Term::ANSIColor
+ * Net::XMPP
+ * JSON
+ * DBI
+ * DBD::SQLite
+ * Hash::Merge
+ * Getopt::Long
+
+ * Date::Format
+ * UUID::Data
+
+You can easily install all the dependencies using CPAN
+
+ sudo cpan POE Config::General Term::ANSIColor Net::XMPP\
+           JSON DBI DBD::SQLite Hash::Merge Getopt::Long
+
+

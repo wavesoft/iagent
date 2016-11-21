@@ -1,0 +1,93 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of Net::XMPP::BOSH::Client2</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../../../resources/shCore.js"></script>
+<script type="text/javascript" src="../../../resources/shBrushPerl.js"></script>
+<link href="../../../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../../../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../../../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Net::XMPP::BOSH::Client - BOSH XMPP Client Module</p>
+<p>
+</p>
+
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>Drop-in replacement for Net::XMPP::Client that provices BOSH connectivity.</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Net::XMPP::BOSH::Client is an extension to Net::XMPP::Client that provides
+a BOSH connection layer for the Extensible Messaging and Presence Protocol (XMPP).</p>
+<pre class="brush: perl">
+
+This module overwrites the XML::Stream object inherited from the Connection
+with the Net::XMPP::BOSH::Stream that utilizes the BOSH wrapper.</pre>
+<pre class="brush: perl">
+
+The usage of this module is excactly the same as Net::XMPP::Client. It only
+has an additional parameter on the constructor.</pre>
+<p>
+</p>
+
+<h1><a name="usage">USAGE</a></h1>
+<p>The only change is in the connect function, where you have additionally the bosh_url parameter:</p>
+<pre class="brush: perl">
+    use Net::XMPP;
+    use Net::XMPP::BOSH;</pre>
+<pre class="brush: perl">
+    $Con = new Net::XMPP::BOSH::Client();
+    $Con-&gt;Connect(
+            hostname =&gt; &quot;jabber.server.org&quot;,
+            username =&gt; &quot;bob&quot;,
+            password =&gt; &quot;XXXX&quot;,
+            resource =&gt; &quot;Work&quot;,</pre>
+<pre class="brush: perl">
+            bosh_url =&gt; &quot;<a href="http://bosh.server.org:5280/http-bind&quot">http://bosh.server.org:5280/http-bind&quot</a>;
+        );</pre>
+<p>
+</p>
+
+<h1><a name="author">AUTHOR</a></h1>
+<p>Ioannis Charalampidis</p>
+<p>
+</p>
+
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>This module is free software, you can redistribute it and/or modify it
+under the LGPL.</p>
+
+</body>
+
+</html>

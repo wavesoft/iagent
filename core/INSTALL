@@ -1,0 +1,10 @@
+
+ In order to install iAgent Core with some basic Modules, do the following:
+
+ perl Makefile.PL
+
+  $ make
+  $ make test
+  $ sudo make install
+  $ make clean
+

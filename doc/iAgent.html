@@ -1,0 +1,185 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of iAgent</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="resources/shCore.js"></script>
+<script type="text/javascript" src="resources/shBrushPerl.js"></script>
+<link href="resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#methods">METHODS</a></li>
+	<ul>
+
+		<li><a href="#start">start</a></li>
+	</ul>
+
+	<li><a href="#module_structure">MODULE STRUCTURE</a></li>
+	<ul>
+
+		<li><a href="#config__default______">config (default = '')</a></li>
+		<li><a href="#priority__default___5_">priority (default = 5)</a></li>
+		<li><a href="#hook_prefix__default______">hook_prefix (default = '')</a></li>
+	</ul>
+
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>iAgent  - iAgent Core</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p><em class="file">iAgent.pm</em> contains the entry point for the iAgent system. In order to start an iAgent you need
+to include this file and call the iAgent::start() function</p>
+<p>
+</p>
+
+<h1><a name="methods">METHODS</a></h1>
+<p>
+</p>
+<h2><a name="start">start</a></h2>
+<p>Initializes, and runs the iAgent system.</p>
+<p>This function will load the <em class="file">iagent.conf</em> on the specified etc directory, load the
+defined modules and their respective configuration files, connect to the defined IO endpoint, 
+initialize the modules and start the kernel.</p>
+<p>There are two ways to call iAgent::start:</p>
+<pre class="brush: perl">
+  start( &quot;/iAgent/etc&quot; )                - Specify the directory to look for iagent.conf into
+  
+  start(
+          etc =&gt; &quot;/iAgent/etc&quot;,         - Specify the etc directory
+          modules =&gt; [ 'name', .. ]     - Explicitly specify the modules to load (override iagent.conf)
+       )</pre>
+<p>
+</p>
+
+<h1><a name="module_structure">MODULE STRUCTURE</a></h1>
+<p>Each module contains a MANIFEST variable that defines the hook names and some other 
+initialization parameters that are handled by the kernel.</p>
+<p>For example:</p>
+<pre class="brush: perl">
+  package iAgent::Module::MyModule;
+  use strict;
+  
+  sub new {
+        my ($class) = @_;
+        return bless {
+        }, $class;
+  }
+  
+  sub hello {
+        print &quot;Hello world&quot;;
+  }
+  
+  sub start {
+        print &quot;Started!&quot;;
+  }
+  
+  #
+  # !!! IMPORTANT !!!
+  #
+  # Here is the module manifest, that defines how each action is handled.
+  # For a complete reference see iAgent::Kernel
+  #
+  # You should use function name (string) and not the
+  # code reference.
+  #
+  
+  our $MANIFEST = {
+                
+        # Standard hook handlers like POE::Session-&gt;Create(object_states =&gt; { }) syntax
+        hooks =&gt; {
+            _start =&gt; 'start',
+            hello =&gt; 'hello',
+        }
+        
+        # Module priority
+        priority =&gt; 10
+        
+  }
+  
+  # Finally, return &quot;1&quot;
+  1;</pre>
+<p>There is only a small set of variables that is used by the iAgent Kernel. The rest of them are exposed
+to the rest of the modules and thus you can have other, per-module configuration.</p>
+<p>
+</p>
+<h2><a name="config__default______">config (default = '')</a></h2>
+<p>Defines the configuration file to be used for the modue. The specified file will be searched within the same folder where
+<em class="file">iagent.conf</em> resides.</p>
+<p>
+</p>
+<h2><a name="priority__default___5_">priority (default = 5)</a></h2>
+<p>Defines the priority this module will have in the broadcast list. The priority can be any number but the range 0-10 is recommended.
+If not specified the module will have a default priority of 5. Smaller priorities places the module higher in the broadcast
+chain, meaning that they can intercept more messages.</p>
+<p>This is used by some low-level modules (like LDAP Authentication) that should intercept the XMPP Broadcasts before they
+reach the handling endpoints.</p>
+<p>
+</p>
+<h2><a name="hook_prefix__default______">hook_prefix (default = '')</a></h2>
+<p>Defines the prefix for the automated hook detection mechanism. If you specify a prefix (Usually '__') the module loader will
+search for functions within the package that starts with that prefix, strip the prefix and use them as handlers for the event
+with the same name.</p>
+<p>For example:</p>
+<pre class="brush: perl">
+  # Handle the &quot;_start&quot; message
+  sub ___start {
+        print &quot;Module started!\n&quot;;
+  }
+  
+  # Handle the &quot;_stop&quot; message
+  sub ___stop {
+        print &quot;Module stopped\n&quot;;
+  }
+  
+  # Handle the &quot;xmpp_iq&quot; message
+  sub __xmpp_iq {
+        my ($self, $packet) = @_;
+        print &quot;IQ Packet arrived from &quot;.$packet-&gt;getFrom().&quot;\n&quot;;
+  }
+  
+  # Setup module
+  $_ {
+        __hook_prefix =&gt; '__'
+  }</pre>
+<p>
+</p>
+
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>For a complete reference on the syntax of the MANIFEST file see <a href="iAgent/Kernel.html">the iAgent::Kernel manpage</a></p>
+<p>
+</p>
+
+<h1><a name="author">AUTHOR</a></h1>
+<p>Developed by Ioannis Charalampidis &lt;<a href="mailto:ioannis.charalampidis@cern.ch">ioannis.charalampidis@cern.ch</a>&gt; 2011-2012 at PH/SFT, CERN</p>
+
+</body>
+
+</html>

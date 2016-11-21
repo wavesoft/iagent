@@ -1,0 +1,25 @@
+
+NAME 
+
+  CernVM Image Builder
+
+DESCRIPTION
+
+ This folder contains the scripts for the autonomous build agent in the proper
+ POSIX filesystem layout.
+
+ There are two sub-packages:
+
+  - perl-lib  : Contains the builder plugin for iAgent
+  - package   : The builder utility
+
+INSTALLATION
+
+ You need to install both per-lib and package packages:
+
+ Install perl agent using the following script:
+
+  # cd perl-lib
+  # perl Makefile.PL
+  # make 
+  # sudo make install

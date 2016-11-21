@@ -1,0 +1,111 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of iAgent::Module::XMPP::Namespaces</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../../../resources/shCore.js"></script>
+<script type="text/javascript" src="../../../resources/shBrushPerl.js"></script>
+<link href="../../../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../../../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../../../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#shorthands">SHORTHANDS</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>iAgent::Module::XMPP::Namespaces - Additional namespaces for Net::XMPP, used by other modules</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides many missing namespace stanzas for the Net::XMPP module. It enables simple interfacing through
+the standard Net::XMPP::Stanza Get/Set/Add/Defined/Remove interface.</p>
+<p>More precisely it implements the following official XMPP namespaces:</p>
+<pre class="brush: perl">
+ jabber:x:data
+ jabber:iq:version
+ url:xmpp:time
+ <a href="http://jabber.org/protocol/pubsub">http://jabber.org/protocol/pubsub</a>
+ <a href="http://jabber.org/protocol/pubsub#owner">http://jabber.org/protocol/pubsub#owner</a>
+ <a href="http://jabber.org/protocol/pubsub#event">http://jabber.org/protocol/pubsub#event</a>
+ <a href="http://jabber.org/protocol/disco#info">http://jabber.org/protocol/disco#info</a></pre>
+<p>Plus some dummy namespaces, used by iAgent and archipel:</p>
+<pre class="brush: perl">
+ iagent:pubsub:entry
+ archipel:*</pre>
+<p>
+</p>
+<h2><a name="shorthands">SHORTHANDS</a></h2>
+<p>In order to simplify the reference of long, dummy namespaces, the following aliases are exported:</p>
+<table>
+<tr><td colspan="2" align="left"><h3>Public namespaces</h3></td></tr>
+<tr><td>XMLPUBSUB</td><td>http://jabber.org/protocol/pubsub</td></tr>
+<tr><td>XMLPUBSUB_OWNER</td><td>http://jabber.org/protocol/pubsub#owner</td></tr>
+<tr><td>XMLPUBSUB_EVENT</td><td>http://jabber.org/protocol/pubsub#event</td></tr>
+<tr><td>JABBER_XDATA</td><td>jabber:x:data</td></tr>
+<tr><td>JABBER_VERSION</td><td>jabber:iq:version</td></tr>
+<tr><td>JABBER_TIME</td><td>url:xmpp:time</td></tr>
+<tr><td>JABBER_DISCOVERY</td><td>http://jabber.org/protocol/disco#info</td></tr>
+<tr><td>IAGENT_PUBSUB_ENTRY</td><td>iagent:pubsub:entry</td></tr>
+</table><table>
+<tr><td colspan="2" align="left"><h3>Private namespaces</h3></td></tr>
+<tr><td>XMLPUBSUB_CREATE</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:create</td></tr>
+<tr><td>XMLPUBSUB_SUBSCRIBE</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:subscribe</td></tr>
+<tr><td>XMLPUBSUB_OPTIONS</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:options</td></tr>
+<tr><td>XMLPUBSUB_CONFIGURE</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:configure</td></tr>
+<tr><td>XMLPUBSUB_ITEMS</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:items</td></tr>
+<tr><td>XMLPUBSUB_ITEM</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:item</td></tr>
+<tr><td>XMLPUBSUB_PUBLISH</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:publish</td></tr>
+<tr><td>XMLPUBSUB_PUBLISH_ENTRY</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:publish:entry</td></tr>
+<tr><td>XMLPUBSUB_RETRACT</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:retract</td></tr>
+<tr><td>XMLPUBSUB_UNSUBSCRIBE</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:unsubscribe</td></tr>
+<tr><td>XMLPUBSUB_SUBSCRIPTION</td><td>__netxmpp__:http://jabber.org/protocol/pubsub:subscription</td></tr>
+<tr><td>XMLPUBSUB_DELETE</td><td>__netxmpp__:http://jabber.org/protocol/pubsub#owner:delete</td></tr>
+<tr><td>XMLPUBSUB_EVENT_COLLECTION</td><td>__netxmpp__:http://jabber.org/protocol/pubsub#event:collection</td></tr>
+<tr><td>XMLPUBSUB_EVENT_CONFIGURATION</td><td>__netxmpp__:http://jabber.org/protocol/pubsub#event:configuration</td></tr>
+<tr><td>XMLPUBSUB_EVENT_DELETE</td><td>__netxmpp__:http://jabber.org/protocol/pubsub#event:delete</td></tr>
+<tr><td>XMLPUBSUB_EVENT_ITEMS</td><td>__netxmpp__:http://jabber.org/protocol/pubsub#event:items</td></tr>
+<tr><td>XMLPUBSUB_EVENT_PURGE</td><td>__netxmpp__:http://jabber.org/protocol/pubsub#event:purge</td></tr>
+<tr><td>XMLPUBSUB_EVENT_SUBSCRIPTION</td><td>__netxmpp__:http://jabber.org/protocol/pubsub#event:subscription</td></tr>
+<tr><td>JABBER_XDATA_FIELD</td><td>__netxmpp__:jabber:x:data:field</td></tr>
+<tr><td>JABBER_DISCOVERY_IDENTITY</td><td>__netxmpp__:http://jabber.org/protocol/disco#info:identity</td></tr>
+<tr><td>JABBER_DISCOVERY_FEATURE</td><td>__netxmpp__:http://jabber.org/protocol/disco#info:feature</td></tr>
+<tr><td>IAGENT_PUBSUB_ENTRY_DATA</td><td>__netxmpp__:iagent:pubsub:entry:data</td></tr>
+<tr><td>XMLARCHIPEL</td><td>__netxmpp__:acrchipel</td></tr>
+<tr><td>XMLARCHIPEL_QUERY</td><td>__netxmpp__:acrchipel:query</td></tr>
+</table><p>
+</p>
+
+<h1><a name="author">AUTHOR</a></h1>
+<p>Developed by Ioannis Charalampidis &lt;<a href="mailto:ioannis.charalampidis@cern.ch">ioannis.charalampidis@cern.ch</a>&gt; 2011-2012 at PH/SFT, CERN</p>
+
+</body>
+
+</html>

@@ -1,0 +1,214 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Documentation of Module::WorkflowActions</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:_atsserver@pizzly.apple.com" />
+<script type="text/javascript" src="../resources/shCore.js"></script>
+<script type="text/javascript" src="../resources/shBrushPerl.js"></script>
+<link href="../resources/shCore.css" rel="stylesheet" type="text/css" />
+<link href="../resources/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+<link href="../resources/core.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+SyntaxHighlighter.all();
+</script></head>
+
+<body class="doc" style="background-color: white">
+
+
+<!-- INDEX BEGIN -->
+<div name="index">
+<p><a name="__index__"></a></p>
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#manifest_definition">MANIFEST DEFINITION</a></li>
+	<ul>
+
+		<li><a href="#actionhandler">ActionHandler</a></li>
+		<li><a href="#validatehandler">ValidateHandler</a></li>
+	</ul>
+
+	<li><a href="#handled_messages">HANDLED MESSAGES</a></li>
+	<ul>
+
+		<li><a href="#workflow_action_provide_action____hashref__">workflow_action_provide ACTION, [ HASHREF ]</a></li>
+		<li><a href="#workflow_action_cleanup_action____hashref__">workflow_action_cleanup ACTION, [ HASHREF ]</a></li>
+		<li><a href="#workflow_action_invoke_action____hashref__">workflow_action_invoke ACTION, [ HASHREF ]</a></li>
+		<li><a href="#workflow_action_abort_id">workflow_action_abort ID</a></li>
+		<li><a href="#workflow_action_validate_action__context__permissions">workflow_action_validate ACTION, CONTEXT, PERMISSIONS</a></li>
+		<li><a href="#workflow_actions_list">workflow_actions_list</a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+
+<hr name="index" />
+</div>
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Module::WorkflowActions - Workflow Actions invocation module</p>
+<p>
+</p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This module provides ability to invoke predefined workflow actions in serial or threaded mode. The main advntage
+of this module is the transparent threaded-execution mode.</p>
+<p>
+</p>
+
+<h1><a name="manifest_definition">MANIFEST DEFINITION</a></h1>
+<p>In order to register your own custom workflow-capable actions, in your module you have to define the following
+manifest parameter:</p>
+<pre class="brush: perl">
+ our $MANIFEST = {
+        WORKFLOW =&gt; {
+        
+                &quot;action_name&quot; =&gt; {
+        
+                        ActionHandler =&gt; &quot;action_handler&quot;,      # The function that will handle this action
+                        ValidateHandler =&gt; &quot;validate_handler&quot;,  # The handler that will verify the integrity of the context [Optional]
+                        CleanupHandler =&gt; &quot;cleanup_handler&quot;,    # The handler that cleans-up the action
+                        Description =&gt; &quot;A short description&quot;,   # A short description that describes what this function does [Optional]
+                        Threaded =&gt; 1 | 0,                      # Set to 1 (Default) to run the handler in a separate thread [Optional]
+                        MaxInstances =&gt; undef | 1~MAX           # Set the number of maximum concurrent instances to allow or undef for unlimited [Optional]
+                        Permissions =&gt; [ 'read', 'write' ],     # Optionally you can specify the permissions required in order to invoke this action [Optional]
+                        RequiredParameters =&gt; [ 'name' ],       # Which parameters are mandatory to be present [Optional]
+                        Provider =&gt; 1                           # The action is a provider
+                        
+                }
+                
+        }
+ };</pre>
+<p>
+</p>
+<h2><a name="actionhandler">ActionHandler</a></h2>
+<p>Action handler is the name of the message handler that will implement the action. The <code>OBJECT</code> is a (read-only) copy of the object
+instance. If anything is changed, the changes will not be reflected to the original instance.</p>
+<p>The <code>ARG0</code> is a reference to a hash that holds the context of the action. The action can freely update the context as required. The WorkflowActions
+module will take care of updating the original hash and responding to the invoker.</p>
+<p>The second argument <code>ARG1</code> is the path where the log files reside. It is recommended that your action moves it's log files there acter the execution
+in order to be collected by the invoking entity later.</p>
+<p>The third argument <code>ARG2</code> is a unique string ID allocated on this action. This ID will be the same when the CleanupHandler for this action is called.</p>
+<p>The the return value of the handler sub will be the return value of the action.</p>
+<p>For example:</p>
+<pre class="brush: perl">
+ sub __my_handler {
+        my ($self, $context, $logdir, $uid) = @_[ OBJECT, ARG0, ARG1, ARG2 ];
+        
+        my $names = $self-&gt;get_names;   # This could be valid only if the function get_names does not modify anything
+    $context-&gt;{names} = $names;         # Context will be updated automatically    
+    
+    open LOGFILE, &quot;&gt;$logdir/my.log&quot;;
+    print LOGFILE &quot;Started!&quot;
+    close LOGFILE
+    
+    return 0;                       # The return code of the action
+ }</pre>
+<p>
+</p>
+<h2><a name="validatehandler">ValidateHandler</a></h2>
+<p>The Validation Handler is called when the action is about to be executed or when somebody requested validation status of an action.</p>
+<p>The <code>ARG0</code> is a reference to a hash that holds the context of the action.</p>
+<p>You must return RET_OK if the validation succeeeded. Otherwise it will be considered invalid.</p>
+<p>For example:</p>
+<pre class="brush: perl">
+ sub __my_validator {
+     my ($self, $context) = @_[ OBJECt, ARG0 ]; 
+     return RET_ERROR unless defined($context-&gt;{name});
+     return RET_OK;
+ }</pre>
+<p>
+</p>
+
+<h1><a name="handled_messages">HANDLED MESSAGES</a></h1>
+<p>The following messages are handled by this module:</p>
+<p>
+</p>
+<h2><a name="workflow_action_provide_action____hashref__">workflow_action_provide ACTION, [ HASHREF ]</a></h2>
+<p>This function returns RET_OK if the specified action is valid under the specified context as a provider. This function can return
+one of the following values:</p>
+<p><strong>RET_OK</strong> If the action is valid and ready to be invoked.</p>
+<p><strong>RET_BUSY</strong> If the action is valid, but all the execution slots are taken.</p>
+<p><strong>RET_INCOMPLETE</strong> If there are one or more missing context parameters.</p>
+<p><strong>RET_INVALID</strong> If the validation function of this action failed to complete successfully.</p>
+<p><strong>RET_DENIED</strong> If the invoking entity has no permissions for the specified action.</p>
+<p><strong>RET_UNHANDLED</strong> If the specified action does not exist.</p>
+<p><code>ACTION</code> is the name of the action you want to check. <code>CONTEXT</code> is a hash that contains the action's context
+variables. <code>PERMISSIONS</code> is a hash of permissions in { permission =&gt; 1 } format of the entity that wants to
+invoke this action.</p>
+<p>
+</p>
+<h2><a name="workflow_action_cleanup_action____hashref__">workflow_action_cleanup ACTION, [ HASHREF ]</a></h2>
+<p>Cleanup a workflow action upon the workflow completion. The first argument is the name of the action you want to invoke, 
+the second argument is a hash reference that contains any of the following parameters:</p>
+<pre class="brush: perl">
+ {
+        Context =&gt; { .. },                              # The context variables for this action. If not specified { } will be used
+        Permissions =&gt; { read =&gt; 1 },   # The permissions that the invoking user have. Usually that's the 'permissions' hash received from the LDAP module
+        ID =&gt; 'UUID',                                   # The unique ID for this action. If not specified, it will be generated
+        LogDir =&gt; &quot;/tmp&quot;                                # The directory that will hold all the log information for this action
+ }</pre>
+<p><strong>Warning!</strong> Keep in mind that this action is invoked serially. No threaded mode is currently supported. Thus the
+'Threaded' attribude dues not affect this action.</p>
+<p>
+</p>
+<h2><a name="workflow_action_invoke_action____hashref__">workflow_action_invoke ACTION, [ HASHREF ]</a></h2>
+<p>Invoke a predefined workflow action. The first argument is the name of the action you want to invoke, the second argument
+is a hash reference that contains any of the following parameters:</p>
+<pre class="brush: perl">
+ {
+        Context =&gt; { .. },                              # The context variables for this action. If not specified { } will be used
+        Permissions =&gt; { read =&gt; 1 },   # The permissions that the invoking user have. Usually that's the 'permissions' hash received from the LDAP module
+        ID =&gt; 'UUID',                                   # The unique ID for this action. If not specified, it will be generated
+        LogDir =&gt; &quot;/tmp&quot;                                # The directory that will hold all the log information for this action
+ }</pre>
+<p>
+</p>
+<h2><a name="workflow_action_abort_id">workflow_action_abort ID</a></h2>
+<p>Abort a previously invoked action, addressed by the unique ID specified (or generated) by workflow_action_invoke.
+This action makes sense only on threaded execution mode.</p>
+<p>
+</p>
+<h2><a name="workflow_action_validate_action__context__permissions">workflow_action_validate ACTION, CONTEXT, PERMISSIONS</a></h2>
+<p>This function returns RET_OK if the specified action is valid under the specified context. This function can return
+one of the following values:</p>
+<p><strong>RET_OK</strong> If the action is valid and ready to be invoked.</p>
+<p><strong>RET_BUSY</strong> If the action is valid, but all the execution slots are taken.</p>
+<p><strong>RET_INCOMPLETE</strong> If there are one or more missing context parameters.</p>
+<p><strong>RET_INVALID</strong> If the validation function of this action failed to complete successfully.</p>
+<p><strong>RET_DENIED</strong> If the invoking entity has no permissions for the specified action.</p>
+<p><strong>RET_UNHANDLED</strong> If the specified action does not exist.</p>
+<p><code>ACTION</code> is the name of the action you want to check. <code>CONTEXT</code> is a hash that contains the action's context
+variables. <code>PERMISSIONS</code> is a hash of permissions in { permission =&gt; 1 } format of the entity that wants to
+invoke this action.</p>
+<p>
+</p>
+<h2><a name="workflow_actions_list">workflow_actions_list</a></h2>
+<p>This function returns an array with all the registered actions. This can be used with iAgent::Kernel::Query to
+collect all the registered actions in the agent.</p>
+<p>Each array element is a hash reference in the following syntax:</p>
+<pre class="brush: perl">
+ {
+        Name =&gt; &quot;ActionName&quot;,                                   # The name of the action
+        Module =&gt; &quot;Package::Name&quot;,                              # The name of the package that hosted this action
+        Description =&gt; &quot;User-defined descr.&quot;,   # A User-defined description
+        MaxInstances =&gt; undef | 1~MAX           # The number of maximum concurrent instances to allow or undef for unlimited
+        Permissions =&gt; [ 'read', 'write' ],     # Optionally you can specify the permissions required in order to invoke this action
+        RequiredParameters =&gt; [ 'name' ]        # Which parameters are mandatory to be present
+ }</pre>
+<p>
+</p>
+
+<h1><a name="author">AUTHOR</a></h1>
+<p>Developed by Ioannis Charalampidis &lt;<a href="mailto:ioannis.charalampidis@cern.ch">ioannis.charalampidis@cern.ch</a>&gt; 2011-2012 at PH/SFT, CERN</p>
+
+</body>
+
+</html>
